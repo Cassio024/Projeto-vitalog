@@ -6,7 +6,7 @@ import '../models/medication_model.dart';
 class AddEditMedicationScreen extends StatefulWidget {
   final Medication? medication;
 
-  const AddEditMedicationScreen({Key? key, this.medication}) : super(key: key);
+  const AddEditMedicationScreen({super.key, this.medication});
 
   @override
   _AddEditMedicationScreenState createState() => _AddEditMedicationScreenState();

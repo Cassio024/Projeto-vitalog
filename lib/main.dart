@@ -12,7 +12,7 @@ void main() {
 }
 
 class VitaLogApp extends StatelessWidget {
-  const VitaLogApp({Key? key}) : super(key: key);
+  const VitaLogApp({super.key});
 
   @override
   Widget build(BuildContext context) {
