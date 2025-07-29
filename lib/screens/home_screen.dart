@@ -10,7 +10,7 @@ import 'add_edit_medication_screen.dart';
 import '../utils/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -74,8 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
         tooltip: 'Adicionar Medicamento',
-        child: const Icon(Icons.add),
         backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add),
       ),
     );
   }

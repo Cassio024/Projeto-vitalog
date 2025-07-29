@@ -1,5 +1,5 @@
 // Arquivo: lib/screens/register_screen.dart
-// CORRIGIDO: Usa o Provider para acessar o AuthService, em vez de criar uma nova instância.
+// MODIFICADO: Atualiza a lógica de submit para tratar a resposta da API.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -7,7 +7,6 @@ import '../utils/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
-
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -17,18 +16,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
   String _error = '';
   bool _loading = false;
+  bool _isPasswordObscured = true;
+  bool _isConfirmPasswordObscured = true;
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _loading = true;
-        _error = '';
-      });
+      setState(() { _loading = true; _error = ''; });
 
-      // CORRIGIDO: Pega a instância única do AuthService via Provider.
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.registerWithEmailAndPassword(
         _nameController.text.trim(),
@@ -38,20 +34,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
-      if (result == null) {
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Conta criada com sucesso! Faça o login.'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop();
+      } else {
         setState(() {
-          _error = 'Não foi possível registrar. Este email já pode estar em uso.';
+          _error = result['message'];
           _loading = false;
         });
-      } else {
-        // Se o registro for bem-sucedido, volta para a tela anterior (login)
-        Navigator.of(context).pop();
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // O restante do build continua o mesmo...
     return Scaffold(
       appBar: AppBar(
         title: const Text('Criar Conta'),
@@ -92,14 +91,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16.0),
                       TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(labelText: 'Senha', prefixIcon: Icon(Icons.lock_outline)),
-                        obscureText: true,
+                        obscureText: _isPasswordObscured,
+                        decoration: InputDecoration(
+                          labelText: 'Senha',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(_isPasswordObscured ? Icons.visibility_off : Icons.visibility, color: AppColors.textLight),
+                            onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
+                          ),
+                        ),
                         validator: (val) => val!.length < 6 ? 'A senha deve ter no mínimo 6 caracteres' : null,
                       ),
                       const SizedBox(height: 16.0),
                       TextFormField(
-                        decoration: const InputDecoration(labelText: 'Confirmar Senha', prefixIcon: Icon(Icons.lock_reset_outlined)),
-                        obscureText: true,
+                        obscureText: _isConfirmPasswordObscured,
+                        decoration: InputDecoration(
+                          labelText: 'Confirmar Senha',
+                          prefixIcon: const Icon(Icons.lock_reset_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(_isConfirmPasswordObscured ? Icons.visibility_off : Icons.visibility, color: AppColors.textLight),
+                            onPressed: () => setState(() => _isConfirmPasswordObscured = !_isConfirmPasswordObscured),
+                          ),
+                        ),
                         validator: (val) {
                           if (val != _passwordController.text) {
                             return 'As senhas não coincidem';
