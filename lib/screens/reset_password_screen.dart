@@ -1,10 +1,12 @@
+// Arquivo: lib/screens/reset_password_screen.dart
+// MODIFICADO: Conectado à API.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
-  const ResetPasswordScreen({super.key, required this.email});
+  const ResetPasswordScreen({Key? key, required this.email}) : super(key: key);
 
   @override
   _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
@@ -19,28 +21,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   void _resetPassword() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _loading = true;
-        _error = '';
-      });
+      setState(() { _loading = true; _error = ''; });
 
       final authService = Provider.of<AuthService>(context, listen: false);
-      final success = await authService.resetPassword(
+      final result = await authService.resetPassword(
+        widget.email,
         _codeController.text.trim(),
         _passwordController.text.trim(),
       );
 
       if(!mounted) return;
 
-      if (success) {
-        // Mostra uma mensagem de sucesso e volta para o login
+      if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Senha redefinida com sucesso!'), backgroundColor: Colors.green),
         );
         Navigator.of(context).popUntil((route) => route.isFirst);
       } else {
         setState(() {
-          _error = 'Código inválido ou expirado. Tente novamente.';
+          _error = result['message'];
           _loading = false;
         });
       }
@@ -82,7 +81,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   const SizedBox(height: 16),
                   if (_error.isNotEmpty)
-                    Text(_error, style: const TextStyle(color: Colors.red)),
+                    Text(_error, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   _loading
                       ? const Center(child: CircularProgressIndicator())

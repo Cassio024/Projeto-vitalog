@@ -1,13 +1,12 @@
 // Arquivo: lib/screens/register_screen.dart
-// MODIFICADO: Adicionado botão para ver/ocultar a senha nos dois campos de senha.
+// MODIFICADO: Atualiza a lógica de submit para tratar a resposta da API.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../utils/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
-
+  const RegisterScreen({Key? key}) : super(key: key);
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -17,7 +16,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
   String _error = '';
   bool _loading = false;
   bool _isPasswordObscured = true;
@@ -25,10 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _loading = true;
-        _error = '';
-      });
+      setState(() { _loading = true; _error = ''; });
 
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.registerWithEmailAndPassword(
@@ -39,19 +34,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
-      if (result == null) {
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Conta criada com sucesso! Faça o login.'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop();
+      } else {
         setState(() {
-          _error = 'Não foi possível registrar. Este email já pode estar em uso.';
+          _error = result['message'];
           _loading = false;
         });
-      } else {
-        Navigator.of(context).pop();
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // O restante do build continua o mesmo...
     return Scaffold(
       appBar: AppBar(
         title: const Text('Criar Conta'),

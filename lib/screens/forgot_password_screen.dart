@@ -1,11 +1,12 @@
-// NOVO ARQUIVO: lib/screens/forgot_password_screen.dart
+// Arquivo: lib/screens/forgot_password_screen.dart
+// MODIFICADO: Conectado à API.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({Key? key}) : super(key: key);
 
   @override
   _ForgotPasswordScreenState createState() => _ForgotPasswordScreenState();
@@ -20,24 +21,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   void _sendResetCode() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _loading = true;
-        _message = '';
-        _isError = false;
-      });
+      setState(() { _loading = true; _message = ''; _isError = false; });
 
       final authService = Provider.of<AuthService>(context, listen: false);
-      final success = await authService.sendPasswordResetCode(_emailController.text.trim());
+      final result = await authService.sendPasswordResetCode(_emailController.text.trim());
       
       if (!mounted) return;
 
-      if (success) {
+      if (result['success']) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => ResetPasswordScreen(email: _emailController.text.trim())),
         );
       } else {
         setState(() {
-          _message = 'Email não encontrado em nossa base de dados.';
+          _message = result['message'];
           _isError = true;
           _loading = false;
         });
@@ -77,6 +74,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     Text(
                       _message,
                       style: TextStyle(color: _isError ? Colors.red : Colors.green),
+                      textAlign: TextAlign.center,
                     ),
                   const SizedBox(height: 16),
                   _loading
