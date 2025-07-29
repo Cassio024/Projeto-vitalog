@@ -1,5 +1,5 @@
 // Arquivo: lib/screens/register_screen.dart
-// CORRIGIDO: Usa o Provider para acessar o AuthService, em vez de criar uma nova instância.
+// MODIFICADO: Adicionado botão para ver/ocultar a senha nos dois campos de senha.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -20,6 +20,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   String _error = '';
   bool _loading = false;
+  bool _isPasswordObscured = true;
+  bool _isConfirmPasswordObscured = true;
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
@@ -28,7 +30,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _error = '';
       });
 
-      // CORRIGIDO: Pega a instância única do AuthService via Provider.
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.registerWithEmailAndPassword(
         _nameController.text.trim(),
@@ -44,7 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _loading = false;
         });
       } else {
-        // Se o registro for bem-sucedido, volta para a tela anterior (login)
         Navigator.of(context).pop();
       }
     }
@@ -92,14 +92,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16.0),
                       TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(labelText: 'Senha', prefixIcon: Icon(Icons.lock_outline)),
-                        obscureText: true,
+                        obscureText: _isPasswordObscured,
+                        decoration: InputDecoration(
+                          labelText: 'Senha',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(_isPasswordObscured ? Icons.visibility_off : Icons.visibility, color: AppColors.textLight),
+                            onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
+                          ),
+                        ),
                         validator: (val) => val!.length < 6 ? 'A senha deve ter no mínimo 6 caracteres' : null,
                       ),
                       const SizedBox(height: 16.0),
                       TextFormField(
-                        decoration: const InputDecoration(labelText: 'Confirmar Senha', prefixIcon: Icon(Icons.lock_reset_outlined)),
-                        obscureText: true,
+                        obscureText: _isConfirmPasswordObscured,
+                        decoration: InputDecoration(
+                          labelText: 'Confirmar Senha',
+                          prefixIcon: const Icon(Icons.lock_reset_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(_isConfirmPasswordObscured ? Icons.visibility_off : Icons.visibility, color: AppColors.textLight),
+                            onPressed: () => setState(() => _isConfirmPasswordObscured = !_isConfirmPasswordObscured),
+                          ),
+                        ),
                         validator: (val) {
                           if (val != _passwordController.text) {
                             return 'As senhas não coincidem';

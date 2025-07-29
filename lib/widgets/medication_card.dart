@@ -8,7 +8,7 @@ import '../utils/app_colors.dart';
 class MedicationCard extends StatelessWidget {
   final Medication medication;
 
-  const MedicationCard({Key? key, required this.medication}) : super(key: key);
+  const MedicationCard({super.key, required this.medication});
 
   @override
   Widget build(BuildContext context) {

@@ -1,17 +1,12 @@
-// NOVO ARQUIVO: lib/services/auth_service.dart
-// Serviço que encapsula toda a lógica de autenticação.
+// Arquivo: lib/services/auth_service.dart
+// MODIFICADO: Adicionados métodos simulados para redefinição de senha.
 import 'dart:async';
 import '../models/user_model.dart';
 
 class AuthService {
-  // StreamController para gerenciar o estado do usuário.
-  // O '.broadcast()' permite múltiplos ouvintes.
   final StreamController<UserModel?> _userController = StreamController<UserModel?>.broadcast();
-
-  // Stream pública para que os widgets possam ouvir as mudanças de auth.
   Stream<UserModel?> get user => _userController.stream;
 
-  // Usuário de exemplo para simulação
   static final Map<String, dynamic> _mockUserDatabase = {
     'test@test.com': {
       'uid': '12345',
@@ -20,14 +15,13 @@ class AuthService {
     }
   };
 
-  // Simula o login
   Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
-    await Future.delayed(const Duration(seconds: 1)); // Simula latência de rede
+    await Future.delayed(const Duration(seconds: 1)); 
 
     if (_mockUserDatabase.containsKey(email) && _mockUserDatabase[email]!['password'] == password) {
       final userData = _mockUserDatabase[email]!;
       final user = UserModel(uid: userData['uid'], name: userData['name'], email: email);
-      _userController.add(user); // Emite o usuário logado para o stream
+      _userController.add(user);
       return user;
     } else {
       _userController.add(null);
@@ -35,12 +29,10 @@ class AuthService {
     }
   }
 
-  // Simula o registro
   Future<UserModel?> registerWithEmailAndPassword(String name, String email, String password) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (_mockUserDatabase.containsKey(email)) {
-      // Usuário já existe
       return null;
     }
 
@@ -52,17 +44,36 @@ class AuthService {
     };
     
     final user = UserModel(uid: uid, name: name, email: email);
-    // Não faz login automático, apenas registra. O usuário precisará logar.
     return user;
   }
 
-  // Simula o logout
   Future<void> signOut() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    _userController.add(null); // Emite nulo para o stream, indicando logout
+    _userController.add(null);
+  }
+  
+  // NOVO MÉTODO: Simula o envio de um código de redefinição.
+  Future<bool> sendPasswordResetCode(String email) async {
+    await Future.delayed(const Duration(seconds: 2));
+    // Lógica de simulação: se o email existir no nosso mock database, consideramos sucesso.
+    if (_mockUserDatabase.containsKey(email)) {
+      print('SIMULAÇÃO: Código de redefinição "123456" enviado para $email');
+      return true;
+    }
+    return false;
+  }
+  
+  // NOVO MÉTODO: Simula a redefinição da senha com o código.
+  Future<bool> resetPassword(String code, String newPassword) async {
+    await Future.delayed(const Duration(seconds: 1));
+    // Lógica de simulação: qualquer código "123456" é aceito.
+    if (code == '123456') {
+       print('SIMULAÇÃO: Senha redefinida com sucesso!');
+       return true;
+    }
+    return false;
   }
 
-  // Fecha o stream controller quando não for mais necessário
   void dispose() {
     _userController.close();
   }

@@ -1,13 +1,14 @@
 // Arquivo: lib/screens/login_screen.dart
-// MODIFICADO: Agora é um StatefulWidget com lógica de formulário e validação.
+// MODIFICADO: Adicionado botão "Esqueci minha senha".
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import '../services/auth_service.dart';
 import '../utils/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String _error = '';
   bool _loading = false;
+  bool _isPasswordObscured = true;
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
@@ -28,14 +30,12 @@ class _LoginScreenState extends State<LoginScreen> {
         _error = '';
       });
 
-      // Usamos o AuthService para fazer o login
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
       
-      // O setState é chamado mesmo após uma operação async, então verificamos se o widget ainda está montado.
       if (!mounted) return;
 
       if (result == null) {
@@ -44,7 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
           _loading = false;
         });
       }
-      // Se o login for bem-sucedido, o AuthWrapper cuidará da navegação.
     }
   }
 
@@ -81,9 +80,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16.0),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(labelText: 'Senha', prefixIcon: Icon(Icons.lock_outline)),
-                      obscureText: true,
+                      obscureText: _isPasswordObscured,
+                      decoration: InputDecoration(
+                        labelText: 'Senha',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                            color: AppColors.textLight,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordObscured = !_isPasswordObscured;
+                            });
+                          },
+                        ),
+                      ),
                       validator: (val) => val!.length < 6 ? 'A senha deve ter no mínimo 6 caracteres' : null,
+                    ),
+                    // BOTÃO ESQUECI MINHA SENHA
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        child: const Text('Esqueci minha senha'),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                          );
+                        },
+                      ),
                     ),
                     const SizedBox(height: 16.0),
                     if (_error.isNotEmpty)
