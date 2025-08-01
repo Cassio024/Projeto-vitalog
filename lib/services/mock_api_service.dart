@@ -24,7 +24,7 @@ class MockApiService {
         'dosage': '2 cápsulas',
         'schedules': ['12:00'],
       },
-       {
+      {
         'id': '4',
         'name': 'Amoxicilina 500mg',
         'dosage': '1 comprimido',
