@@ -6,7 +6,7 @@ import '../services/auth_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
-  const ResetPasswordScreen({super.key, required this.email});
+  const ResetPasswordScreen({Key? key, required this.email}) : super(key: key);
 
   @override
   _ResetPasswordScreenState createState() => _ResetPasswordScreenState();

@@ -1,7 +1,5 @@
 // Arquivo: lib/models/medication_model.dart
-// MODIFICADO: Agora usa o `_id` do MongoDB.
-import 'package:intl/intl.dart';
-
+// (Sem alterações)
 class Medication {
   final String id;
   final String name;
@@ -17,7 +15,7 @@ class Medication {
 
   factory Medication.fromJson(Map<String, dynamic> json) {
     return Medication(
-      id: json['_id'], // O MongoDB usa '_id' por padrão
+      id: json['id'],
       name: json['name'],
       dosage: json['dosage'],
       schedules: List<String>.from(json['schedules']),

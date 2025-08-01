@@ -1,46 +1,54 @@
 // Arquivo: lib/widgets/medication_card.dart
-// MODIFICADO: Recebe uma função para deletar.
-
+// (Sem alterações)
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../models/medication_model.dart';
 import '../screens/add_edit_medication_screen.dart';
+import '../utils/app_colors.dart';
 
 class MedicationCard extends StatelessWidget {
   final Medication medication;
-  final VoidCallback onDelete; // Função que será chamada ao deletar
 
-  const MedicationCard({
-    Key? key,
-    required this.medication,
-    required this.onDelete,
-  }) : super(key: key);
+  const MedicationCard({super.key, required this.medication});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 4,
+      shadowColor: AppColors.lightGrey.withOpacity(0.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(bottom: 16.0),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            const Icon(Icons.medication_liquid, size: 40),
+            const Icon(Icons.medication_liquid, color: AppColors.primary, size: 40),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(medication.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    medication.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text('Dosagem: ${medication.dosage}'),
+                  Text(
+                    'Dosagem: ${medication.dosage}',
+                    style: const TextStyle(fontSize: 14, color: AppColors.textLight),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 16),
+                      const Icon(Icons.access_time, size: 16, color: AppColors.textLight),
                       const SizedBox(width: 4),
-                      Text('Horários: ${medication.schedules.join(", ")}'),
+                      Text(
+                        'Horários: ${medication.schedules.join(", ")}',
+                        style: const TextStyle(fontSize: 14, color: AppColors.textLight),
+                      ),
                     ],
                   ),
                 ],
@@ -49,34 +57,30 @@ class MedicationCard extends StatelessWidget {
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'edit') {
-                  // A lógica de edição precisa passar o ID e recarregar a lista na volta
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => AddEditMedicationScreen(medication: medication)),
-                  );
-                } else if (value == 'delete') {
-                  // Mostra um diálogo de confirmação antes de deletar
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Confirmar Exclusão'),
-                      content: Text('Tem certeza que deseja remover "${medication.name}"?'),
-                      actions: [
-                        TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.of(ctx).pop()),
-                        TextButton(
-                          child: const Text('Excluir', style: TextStyle(color: Colors.red)),
-                          onPressed: () {
-                            Navigator.of(ctx).pop();
-                            onDelete(); // Chama a função de deletar
-                          },
-                        ),
-                      ],
+                    MaterialPageRoute(
+                      builder: (context) => AddEditMedicationScreen(medication: medication),
                     ),
                   );
+                } else if (value == 'delete') {
+                  // Lógica para deletar (a ser implementada)
                 }
               },
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                const PopupMenuItem(value: 'delete', child: Text('Excluir', style: TextStyle(color: Colors.red))),
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'edit',
+                  child: ListTile(
+                    leading: Icon(Icons.edit_outlined),
+                    title: Text('Editar'),
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline, color: Colors.red),
+                    title: Text('Excluir', style: TextStyle(color: Colors.red)),
+                  ),
+                ),
               ],
             ),
           ],
