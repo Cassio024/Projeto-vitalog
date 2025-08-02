@@ -11,10 +11,10 @@ class MedicationCard extends StatelessWidget {
   final VoidCallback onDelete; // Função que será chamada ao deletar
 
   const MedicationCard({
-    Key? key,
+    super.key,
     required this.medication,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

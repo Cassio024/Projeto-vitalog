@@ -9,7 +9,7 @@ import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
 
 class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
   @override
   _AuthWrapperState createState() => _AuthWrapperState();
 }

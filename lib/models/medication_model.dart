@@ -1,6 +1,5 @@
 // Arquivo: lib/models/medication_model.dart
 // MODIFICADO: Agora usa o `_id` do MongoDB.
-import 'package:intl/intl.dart';
 
 class Medication {
   final String id;
