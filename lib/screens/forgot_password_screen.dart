@@ -1,5 +1,4 @@
 // Arquivo: lib/screens/forgot_password_screen.dart
-// MODIFICADO: Conectado à API.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -22,12 +21,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void _sendResetCode() async {
     if (_formKey.currentState!.validate()) {
       setState(() { _loading = true; _message = ''; _isError = false; });
-
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.sendPasswordResetCode(_emailController.text.trim());
-      
       if (!mounted) return;
-
       if (result['success']) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => ResetPasswordScreen(email: _emailController.text.trim())),
@@ -57,32 +53,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Insira seu email para enviarmos um código de recuperação.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  const Text('Insira o seu email para enviarmos um código de recuperação.', textAlign: TextAlign.center, style: TextStyle(fontSize: 16)),
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (val) => val!.isEmpty ? 'Por favor, insira seu email' : null,
+                    validator: (val) => val!.isEmpty ? 'Por favor, insira o seu email' : null,
                   ),
                   const SizedBox(height: 16),
                   if (_message.isNotEmpty)
-                    Text(
-                      _message,
-                      style: TextStyle(color: _isError ? Colors.red : Colors.green),
-                      textAlign: TextAlign.center,
-                    ),
+                    Text(_message, textAlign: TextAlign.center, style: TextStyle(color: _isError ? Colors.red : Colors.green)),
                   const SizedBox(height: 16),
                   _loading
                       ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                          onPressed: _sendResetCode,
-                          child: const Text('Enviar Código'),
-                        ),
+                      : ElevatedButton(onPressed: _sendResetCode, child: const Text('Enviar Código')),
                 ],
               ),
             ),

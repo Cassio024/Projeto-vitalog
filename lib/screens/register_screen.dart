@@ -1,5 +1,4 @@
 // Arquivo: lib/screens/register_screen.dart
-// MODIFICADO: Atualiza a lógica de submit para tratar a resposta da API.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -7,6 +6,7 @@ import '../utils/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -19,21 +19,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _error = '';
   bool _loading = false;
   bool _isPasswordObscured = true;
-  bool _isConfirmPasswordObscured = true;
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() { _loading = true; _error = ''; });
-
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.registerWithEmailAndPassword(
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-
       if (!mounted) return;
-
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Conta criada com sucesso! Faça o login.'), backgroundColor: Colors.green),
@@ -50,7 +46,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // O restante do build continua o mesmo...
     return Scaffold(
       appBar: AppBar(
         title: const Text('Criar Conta'),
@@ -74,12 +69,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      const Text('Preencha seus dados', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      const Text('Preencha os seus dados', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                       const SizedBox(height: 24.0),
                       TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(labelText: 'Nome Completo', prefixIcon: Icon(Icons.person_outline)),
-                        validator: (val) => val!.isEmpty ? 'Por favor, insira seu nome' : null,
+                        validator: (val) => val!.isEmpty ? 'Por favor, insira o seu nome' : null,
                       ),
                       const SizedBox(height: 16.0),
                       TextFormField(
@@ -103,34 +98,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         validator: (val) => val!.length < 6 ? 'A senha deve ter no mínimo 6 caracteres' : null,
                       ),
                       const SizedBox(height: 16.0),
-                      TextFormField(
-                        obscureText: _isConfirmPasswordObscured,
-                        decoration: InputDecoration(
-                          labelText: 'Confirmar Senha',
-                          prefixIcon: const Icon(Icons.lock_reset_outlined),
-                          suffixIcon: IconButton(
-                            icon: Icon(_isConfirmPasswordObscured ? Icons.visibility_off : Icons.visibility, color: AppColors.textLight),
-                            onPressed: () => setState(() => _isConfirmPasswordObscured = !_isConfirmPasswordObscured),
-                          ),
-                        ),
-                        validator: (val) {
-                          if (val != _passwordController.text) {
-                            return 'As senhas não coincidem';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16.0),
                       if (_error.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10.0),
                           child: Text(_error, style: const TextStyle(color: Colors.red, fontSize: 14)),
                         ),
+                      const SizedBox(height: 16.0),
                       _loading
                           ? const Center(child: CircularProgressIndicator())
                           : ElevatedButton(
                               onPressed: _submitForm,
-                              child: const Text('Registrar'),
+                              child: const Text('Registar'),
                             ),
                     ],
                   ),

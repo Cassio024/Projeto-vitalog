@@ -1,5 +1,4 @@
 // Arquivo: lib/screens/reset_password_screen.dart
-// MODIFICADO: Conectado à API.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -22,16 +21,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   void _resetPassword() async {
     if (_formKey.currentState!.validate()) {
       setState(() { _loading = true; _error = ''; });
-
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.resetPassword(
         widget.email,
         _codeController.text.trim(),
         _passwordController.text.trim(),
       );
-
       if(!mounted) return;
-
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Senha redefinida com sucesso!'), backgroundColor: Colors.green),

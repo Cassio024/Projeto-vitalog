@@ -1,9 +1,9 @@
-// lib/screens/home_screen.dart
+// ARQUIVO CORRIGIDO: lib/screens/home_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../models/medication_model.dart';
+import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/medication_service.dart';
 import '../widgets/medication_card.dart';
@@ -12,51 +12,76 @@ import 'scanner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final MedicationService _medicationService = MedicationService();
-  late Future<List<Medication>> _medicationsFuture;
+  Future<List<Medication>>? _medicationsFuture;
 
   @override
-  void initState() {
-    super.initState();
-    _loadMedications();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _refreshMedications();
   }
 
-  void _loadMedications() {
-    setState(() {
-      _medicationsFuture = _medicationService.getMedications();
-    });
+  Future<void> _refreshMedications() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final medicationService = Provider.of<MedicationService>(context, listen: false);
+    if (authService.token != null) {
+      setState(() {
+        _medicationsFuture = medicationService.getMedications(authService.token!);
+      });
+    }
   }
 
-  // MODIFICADO: Agora exibe mensagens de sucesso ou erro
-  void _deleteMedication(String id) async {
-    final result = await _medicationService.deleteMedication(id);
+  Future<void> _deleteMedication(String medicationId) async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final medicationService = Provider.of<MedicationService>(context, listen: false);
+    
+    if (authService.token == null) return;
 
-    if (!mounted) return; // Verifica se o widget ainda está na tela
+    try {
+      await medicationService.deleteMedication(medicationId, authService.token!);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Medicamento deletado com sucesso!')),
+        );
+      }
+      _refreshMedications();
+    } catch (e) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao deletar medicamento: $e')),
+        );
+      }
+    }
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result['message']),
-        backgroundColor: result['success'] ? Colors.green : Colors.red,
+  Future<void> _navigateToEditScreen(Medication medication) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddEditMedicationScreen(medication: medication),
       ),
     );
-
-    if (result['success']) {
-      _loadMedications(); // Recarrega a lista apenas se deu certo
+    if (result == true) {
+      _refreshMedications();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final user = Provider.of<UserModel?>(context);
+
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Meus Medicamentos - ${DateFormat('dd/MM').format(DateTime.now())}'),
+        title: Text('Olá, ${user.name ?? 'Utilizador'}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
@@ -64,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async => await authService.signOut(),
+            onPressed: () => authService.signOut(),
           ),
         ],
       ),
@@ -75,22 +100,27 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Erro: ${snapshot.error}'));
+            return Center(child: Text('Erro ao carregar dados: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('Nenhum medicamento cadastrado.'));
           }
           final medications = snapshot.data!;
           return RefreshIndicator(
-            onRefresh: () async => _loadMedications(),
+            onRefresh: _refreshMedications,
             child: ListView.builder(
               padding: const EdgeInsets.all(16.0),
               itemCount: medications.length,
               itemBuilder: (context, index) {
+                final medication = medications[index];
+                
+                // ----- ESTA É A PARTE QUE FOI CORRIGIDA -----
+                // Removemos o GestureDetector e agora passamos as duas funções (onEdit e onDelete)
+                // diretamente para o nosso novo MedicationCard inteligente.
                 return MedicationCard(
-                  medication: medications[index],
-                  // MODIFICADO: Chama a nova função _deleteMedication
-                  onDelete: () => _deleteMedication(medications[index].id),
+                  medication: medication,
+                  onEdit: () => _navigateToEditScreen(medication), 
+                  onDelete: () => _deleteMedication(medication.id),
                 );
               },
             ),
@@ -99,11 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(builder: (context) => const AddEditMedicationScreen()),
-          );
+          final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
           if (result == true) {
-            _loadMedications();
+            _refreshMedications();
           }
         },
         child: const Icon(Icons.add),

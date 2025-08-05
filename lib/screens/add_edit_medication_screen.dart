@@ -1,108 +1,169 @@
 // Arquivo: lib/screens/add_edit_medication_screen.dart
-// MODIFICADO: Salva os dados na API real.
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/medication_model.dart';
 import '../services/medication_service.dart';
+import '../services/auth_service.dart';
 
 class AddEditMedicationScreen extends StatefulWidget {
   final Medication? medication;
   const AddEditMedicationScreen({super.key, this.medication});
+
   @override
   _AddEditMedicationScreenState createState() => _AddEditMedicationScreenState();
 }
 
 class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
   final _formKey = GlobalKey<FormState>();
-  final MedicationService _medicationService = MedicationService();
-  bool _isLoading = false;
-  late String _name;
-  late String _dosage;
-  late String _schedules;
+  late final TextEditingController _nameController;
+  late final TextEditingController _dosageController;
+  late final TextEditingController _schedulesController;
 
+  bool _isLoading = false;
   bool get _isEditing => widget.medication != null;
 
   @override
   void initState() {
     super.initState();
-    _name = widget.medication?.name ?? '';
-    _dosage = widget.medication?.dosage ?? '';
-    _schedules = widget.medication?.schedules.join(', ') ?? '';
+    _nameController = TextEditingController(text: widget.medication?.name ?? '');
+    _dosageController = TextEditingController(text: widget.medication?.dosage ?? '');
+    _schedulesController = TextEditingController(text: widget.medication?.schedules.join(', ') ?? '');
   }
 
-  void _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _dosageController.dispose();
+    _schedulesController.dispose();
+    super.dispose();
+  }
 
-      try {
-        final scheduleList = _schedules.split(',').map((e) => e.trim()).toList();
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final medicationService = Provider.of<MedicationService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final token = authService.token;
+
+    if (token == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    
+    try {
+      // ----- INÍCIO DA MODIFICAÇÃO (Solução Rápida) -----
+      // O bloco de código abaixo foi comentado para desabilitar a chamada à
+      // API de verificação de interações (/api/interactions/check), que estava
+      // causando o erro 404 pois a rota não existe no seu backend ainda.
+      /*
+      final currentMeds = await medicationService.getMedications(token);
+      final List<String> medNamesForCheck = currentMeds.map((m) {
+        if (_isEditing && m.id == widget.medication!.id) {
+          return _nameController.text;
+        }
+        return m.name;
+      }).toList();
+
+      if (!_isEditing) {
+        medNamesForCheck.add(_nameController.text);
+      }
+      
+      final interactionResult = await medicationService.checkInteractions(medNamesForCheck, token);
+
+      bool canProceed = true;
+      if (mounted && interactionResult['hasInteraction'] == true) {
+        canProceed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Alerta de Interação'),
+            content: Text((interactionResult['warnings'] as List<dynamic>).join('\n')),
+            actions: [
+              TextButton(
+                child: const Text('Cancelar'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              TextButton(
+                child: const Text('Continuar Mesmo Assim'),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          ),
+        ) ?? false;
+      }
+      */
+
+      // Como o bloco acima foi desabilitado, definimos 'canProceed' como 'true'
+      // para que o código de salvar o medicamento seja executado.
+      bool canProceed = true;
+      // ----- FIM DA MODIFICAÇÃO -----
+
+      if (canProceed) {
+        final medicationData = {
+          'name': _nameController.text,
+          'dosage': _dosageController.text,
+          'schedules': _schedulesController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(),
+        };
 
         if (_isEditing) {
-          // Lógica de update (ainda não implementada no service, mas a estrutura está aqui)
+          await medicationService.updateMedication(widget.medication!.id, medicationData, token);
         } else {
-          await _medicationService.addMedication(_name, _dosage, scheduleList);
+          await medicationService.addMedication(medicationData, token);
         }
-        // Retorna 'true' para a tela anterior para sinalizar sucesso
-        Navigator.of(context).pop(true);
-      } catch (e) {
-        setState(() => _isLoading = false);
+
+        if (mounted) Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        // Adicionamos um print para ver o erro no console de depuração
+        print('ERRO NO SUBMITFORM: $e'); 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: ${e.toString()}')),
+          SnackBar(content: Text('Erro ao salvar: ${e.toString()}'))
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... (build method com o formulário, mas o botão agora usa a nova lógica)
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? 'Editar Medicamento' : 'Adicionar Medicamento'),
-      ),
-      body: Center(
+      appBar: AppBar(title: Text(_isEditing ? 'Editar Medicamento' : 'Adicionar Medicamento')),
+      body: Form(
+        key: _formKey,
         child: SingleChildScrollView(
-          child: ConstrainedBox(
-             constraints: const BoxConstraints(maxWidth: 600),
-            child: Form(
-              key: _formKey,
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
-                      initialValue: _name,
-                      decoration: const InputDecoration(labelText: 'Nome do Medicamento'),
-                      validator: (v) => v!.isEmpty ? 'Campo obrigatório' : null,
-                      onSaved: (v) => _name = v!,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      initialValue: _dosage,
-                      decoration: const InputDecoration(labelText: 'Dosagem (ex: 500mg)'),
-                      validator: (v) => v!.isEmpty ? 'Campo obrigatório' : null,
-                      onSaved: (v) => _dosage = v!,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      initialValue: _schedules,
-                      decoration: const InputDecoration(labelText: 'Horários (ex: 08:00, 20:00)'),
-                      validator: (v) => v!.isEmpty ? 'Campo obrigatório' : null,
-                      onSaved: (v) => _schedules = v!,
-                    ),
-                    const SizedBox(height: 32),
-                    _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: _submitForm,
-                            child: Text(_isEditing ? 'Salvar Alterações' : 'Adicionar'),
-                          ),
-                  ],
-                ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nome do Medicamento'),
+                validator: (value) => value!.isEmpty ? 'Insira um nome' : null,
               ),
-            ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _dosageController,
+                decoration: const InputDecoration(labelText: 'Dosagem'),
+                validator: (value) => value!.isEmpty ? 'Insira a dosagem' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _schedulesController,
+                decoration: const InputDecoration(labelText: 'Horários (separados por vírgula)'),
+                validator: (value) => value!.isEmpty ? 'Insira os horários' : null,
+              ),
+              const SizedBox(height: 32),
+              _isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _submitForm,
+                    child: Text(_isEditing ? 'Salvar Alterações' : 'Adicionar'),
+                  )
+            ],
           ),
         ),
       ),

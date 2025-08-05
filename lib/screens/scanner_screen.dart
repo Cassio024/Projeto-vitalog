@@ -1,60 +1,75 @@
+// Arquivo: lib/screens/scanner_screen.dart
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../services/drug_service.dart'; // Você precisará criar este serviço também
+import 'package:provider/provider.dart';
+import '../services/medication_service.dart';
+import '../services/auth_service.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
 
   @override
-  _ScannerScreenState createState() => _ScannerScreenState();
+  State<ScannerScreen> createState() => _ScannerScreenState();
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
   final MobileScannerController _scannerController = MobileScannerController();
-  final DrugService _drugService = DrugService();
   bool _isProcessing = false;
 
-  void _handleDetection(BarcodeCapture capture) async {
+  void _handleQRCode(BarcodeCapture capture) {
     if (_isProcessing) return;
-
-    setState(() {
-      _isProcessing = true;
-    });
-
     final String? code = capture.barcodes.first.rawValue;
+    if (code == null) return;
 
-    if (code == null) {
-      _showResultDialog('Erro', 'Não foi possível ler o código.', true);
+    setState(() { _isProcessing = true; });
+    _scannerController.stop();
+
+    final medicationService = Provider.of<MedicationService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
+    
+    final token = authService.token;
+    if (token == null) {
+      Navigator.of(context).pop();
       return;
     }
-
-    final result = await _drugService.verifyDrug(code);
-
-    _showResultDialog(
-      result['authentic'] ? 'Medicamento Autêntico' : 'Alerta',
-      result['message'],
-      !result['authentic'], // é erro se não for autêntico
-    );
-  }
-
-  void _showResultDialog(String title, String content, bool isError) {
+    
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            child: const Text('Escanear Novamente'),
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() {
-                _isProcessing = false;
-              });
-            },
-          )
-        ],
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    medicationService.verifyAuthenticity(token, code).then((result) {
+      Navigator.of(context).pop();
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(result['authentic'] == true ? 'Medicamento Autêntico' : 'Alerta'),
+          content: Text(result['message'] ?? 'Não foi possível verificar.'),
+          actions: [
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (mounted) {
+                  _scannerController.start();
+                  setState(() { _isProcessing = false; });
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Verificar Autenticidade')),
+      body: MobileScanner(
+        controller: _scannerController,
+        onDetect: _handleQRCode,
       ),
     );
   }
@@ -63,30 +78,5 @@ class _ScannerScreenState extends State<ScannerScreen> {
   void dispose() {
     _scannerController.dispose();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Verificador de Autenticidade')),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _handleDetection,
-          ),
-          Center(
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white.withOpacity(0.7), width: 4),
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
   }
 }

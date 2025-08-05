@@ -1,9 +1,9 @@
 // Arquivo: lib/main.dart
-// CORRIGIDO: Garante que uma única instância do AuthService seja usada em todo o app.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'models/user_model.dart';
 import 'services/auth_service.dart';
+import 'services/medication_service.dart';
 import 'utils/app_colors.dart';
 import 'widgets/auth_wrapper.dart';
 
@@ -16,12 +16,10 @@ class VitaLogApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos um MultiProvider para fornecer múltiplos serviços.
     return MultiProvider(
       providers: [
-        // 1. Fornece uma ÚNICA instância de AuthService para todo o app.
-        Provider<AuthService>(create: (_) => AuthService()),
-        // 2. O StreamProvider agora usa a instância criada acima para ouvir o stream do usuário.
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        Provider<MedicationService>(create: (_) => MedicationService()),
         StreamProvider<UserModel?>(
           create: (context) => context.read<AuthService>().user,
           initialData: null,
@@ -76,7 +74,7 @@ class VitaLogApp extends StatelessWidget {
             fillColor: Colors.white,
           ),
         ),
-        home: const AuthWrapper(), // O AuthWrapper agora é a tela inicial
+        home: const AuthWrapper(),
         debugShowCheckedModeBanner: false,
       ),
     );

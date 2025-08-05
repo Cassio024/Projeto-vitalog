@@ -1,55 +1,21 @@
+// Arquivo: lib/services/auth_service.dart
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
-class AuthService {
+class AuthService with ChangeNotifier {
   final StreamController<UserModel?> _userController = StreamController<UserModel?>.broadcast();
   Stream<UserModel?> get user => _userController.stream;
   String? _token;
 
-  Future<void> tryAutoLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey('userData')) return;
-    final extractedUserData = json.decode(prefs.getString('userData')!) as Map<String, dynamic>;
-    _token = extractedUserData['token'];
-    _userController.add(UserModel(uid: 'auto_logged_in'));
-  }
-
-  Future<Map<String, dynamic>> signInWithEmailAndPassword(String email, String password) async {
-    // ...código de login... (sem alterações)
-     final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/login');
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email, 'password': password}),
-      );
-      final responseData = json.decode(response.body);
-      if (response.statusCode == 200) {
-        _token = responseData['token'];
-        _userController.add(UserModel(uid: 'logged_in_id', email: email));
-
-        final prefs = await SharedPreferences.getInstance();
-        final userData = json.encode({'token': _token});
-        await prefs.setString('userData', userData);
-
-        return {'success': true, 'data': responseData};
-      } else {
-        _userController.add(null);
-        return {'success': false, 'message': responseData['msg'] ?? 'Credenciais inválidas'};
-      }
-    } catch (error) {
-      _userController.add(null);
-      return {'success': false, 'message': 'Não foi possível conectar ao servidor.'};
-    }
-  }
+  String? get token => _token;
 
   Future<Map<String, dynamic>> registerWithEmailAndPassword(String name, String email, String password) async {
-    // ...código de registro... (sem alterações)
-      final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/register');
+    final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/register');
     try {
       final response = await http.post(
         url,
@@ -67,15 +33,32 @@ class AuthService {
     }
   }
 
-  Future<void> signOut() async {
-    // ...código de logout... (sem alterações)
-    _token = null;
-    _userController.add(null);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('userData');
+  Future<Map<String, dynamic>> signInWithEmailAndPassword(String email, String password) async {
+    final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/login');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'password': password}),
+      );
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        _token = responseData['token'];
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(_token!);
+        final user = UserModel(uid: decodedToken['user']['id'], email: email);
+        _userController.add(user);
+        notifyListeners();
+        return {'success': true};
+      } else {
+        _userController.add(null);
+        return {'success': false, 'message': responseData['msg'] ?? 'Credenciais inválidas'};
+      }
+    } catch (error) {
+      _userController.add(null);
+      return {'success': false, 'message': 'Não foi possível conectar ao servidor.'};
+    }
   }
 
-  // MÉTODO QUE ESTAVA FALTANDO
   Future<Map<String, dynamic>> sendPasswordResetCode(String email) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/forgot-password');
     try {
@@ -88,21 +71,20 @@ class AuthService {
       if (response.statusCode == 200) {
         return {'success': true, 'message': responseData['msg']};
       } else {
-        return {'success': false, 'message': responseData['msg'] ?? 'Erro ao solicitar código.'};
+        return {'success': false, 'message': responseData['msg'] ?? 'Erro ao enviar email.'};
       }
     } catch (error) {
       return {'success': false, 'message': 'Não foi possível conectar ao servidor.'};
     }
   }
-
-  // MÉTODO QUE ESTAVA FALTANDO
-  Future<Map<String, dynamic>> resetPassword(String email, String code, String newPassword) async {
+  
+  Future<Map<String, dynamic>> resetPassword(String email, String code, String password) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/reset-password');
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email, 'code': code, 'password': newPassword}),
+        body: json.encode({'email': email, 'code': code, 'password': password}),
       );
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
@@ -115,7 +97,9 @@ class AuthService {
     }
   }
 
-  void dispose() {
-    _userController.close();
+  Future<void> signOut() async {
+    _token = null;
+    _userController.add(null);
+    notifyListeners();
   }
 }

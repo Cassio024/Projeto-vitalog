@@ -1,14 +1,14 @@
 // Arquivo: lib/screens/login_screen.dart
-// MODIFICADO: Atualiza a lógica de submit para tratar a resposta da API.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 import '../services/auth_service.dart';
 import '../utils/app_colors.dart';
-import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -24,20 +24,19 @@ class _LoginScreenState extends State<LoginScreen> {
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() { _loading = true; _error = ''; });
-
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      
       if (!mounted) return;
-
-      if (result['success']) {
-        // O AuthWrapper cuidará da navegação
-      } else {
+      if (!result['success']) {
         setState(() {
           _error = result['message'];
+          _loading = false;
+        });
+      } else if (mounted) {
+        setState(() {
           _loading = false;
         });
       }
@@ -46,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // O restante do build continua o mesmo...
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -67,13 +65,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
                     const Text('Bem-vindo ao VitaLog', textAlign: TextAlign.center, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                     const SizedBox(height: 8),
-                    const Text('Seu assistente de saúde digital.', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: AppColors.textLight)),
+                    const Text('O seu assistente de saúde digital.', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: AppColors.textLight)),
                     const SizedBox(height: 32.0),
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
                       keyboardType: TextInputType.emailAddress,
-                      validator: (val) => val!.isEmpty ? 'Por favor, insira seu email' : null,
+                      validator: (val) => val!.isEmpty ? 'Por favor, insira o seu email' : null,
                     ),
                     const SizedBox(height: 16.0),
                     TextFormField(
@@ -92,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                      Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        child: const Text('Esqueci minha senha'),
+                        child: const Text('Esqueceu a senha?'),
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
@@ -100,12 +98,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 16.0),
                     if (_error.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10.0),
                         child: Text(_error, style: const TextStyle(color: Colors.red, fontSize: 14)),
                       ),
+                    const SizedBox(height: 16.0),
                     _loading
                         ? const Center(child: CircularProgressIndicator())
                         : ElevatedButton(
@@ -114,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                     const SizedBox(height: 16.0),
                     TextButton(
-                      child: const Text('Não tem uma conta? Registre-se'),
+                      child: const Text('Não tem uma conta? Registe-se'),
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(builder: (context) => const RegisterScreen()),

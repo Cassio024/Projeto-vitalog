@@ -1,6 +1,6 @@
-// NOVO ARQUIVO: lib/utils/constants.dart
-// Centraliza o endereço da nossa API.
+// ARQUIVO: lib/utils/constants.dart
+
 class ApiConstants {
-  // Para testar o PWA localmente, usamos o endereço 'localhost'.
+  // Este é o endereço CORRETO e ÚNICO que seu app deve usar.
   static const String baseUrl = 'https://vitalog-api.onrender.com';
 }

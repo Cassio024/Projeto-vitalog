@@ -1,5 +1,4 @@
-// NOVO ARQUIVO: lib/models/user_model.dart
-// Modelo simples para representar o usuário logado.
+// Arquivo: lib/models/user_model.dart
 class UserModel {
   final String uid;
   final String? name;
