@@ -1,4 +1,4 @@
-// ARQUIVO CORRIGIDO: lib/screens/home_screen.dart
+// ARQUIVO MODIFICADO: lib/screens/home_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +9,7 @@ import '../services/medication_service.dart';
 import '../widgets/medication_card.dart';
 import 'add_edit_medication_screen.dart';
 import 'scanner_screen.dart';
+import 'chat_screen.dart'; // <-- NOVO: Importa a tela de chat
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -51,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       _refreshMedications();
     } catch (e) {
-       if (mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Falha ao deletar medicamento: $e')),
         );
@@ -113,10 +114,6 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: medications.length,
               itemBuilder: (context, index) {
                 final medication = medications[index];
-                
-                // ----- ESTA É A PARTE QUE FOI CORRIGIDA -----
-                // Removemos o GestureDetector e agora passamos as duas funções (onEdit e onDelete)
-                // diretamente para o nosso novo MedicationCard inteligente.
                 return MedicationCard(
                   medication: medication,
                   onEdit: () => _navigateToEditScreen(medication), 
@@ -127,15 +124,36 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
-          if (result == true) {
-            _refreshMedications();
-          }
-        },
-        child: const Icon(Icons.add),
+
+      // ----- INÍCIO DA MODIFICAÇÃO -----
+      // Substituímos o FloatingActionButton único por uma Row com dois botões.
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'addMedicationFab', // heroTag é importante quando há múltiplos FABs
+            onPressed: () async {
+              final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
+              if (result == true) {
+                _refreshMedications();
+              }
+            },
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(width: 10), // Espaçamento entre os botões
+          FloatingActionButton(
+            heroTag: 'chatFab',
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const ChatScreen(),
+              ));
+            },
+            backgroundColor: Colors.deepPurple, // Cor diferente para destacar
+            child: const Icon(Icons.chat_bubble_outline),
+          ),
+        ],
       ),
+      // ----- FIM DA MODIFICAÇÃO -----
     );
   }
 }
