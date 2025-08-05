@@ -33,9 +33,9 @@ class MedicationService {
     }
   }
 
-  Future<Medication> addMedication(String name, String dosage, List<String> schedules) async {
-    // ... (código existente, sem alterações)
-     final token = await _getToken();
+  // MODIFICAÇÃO: A função agora retorna o mapa completo da resposta da API.
+  Future<Map<String, dynamic>> addMedication(String name, String dosage, List<String> schedules) async {
+    final token = await _getToken();
     if (token == null) throw Exception('Não autorizado');
 
     final url = Uri.parse('${ApiConstants.baseUrl}/api/medications');
@@ -52,14 +52,15 @@ class MedicationService {
       }),
     );
 
-    if (response.statusCode == 200) {
-      return Medication.fromJson(json.decode(response.body));
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      // MODIFICAÇÃO: Retorna o JSON decodificado diretamente.
+      // Ele conterá {"medication": {...}, "warning": "..."}
+      return json.decode(response.body);
     } else {
       throw Exception('Falha ao adicionar medicamento.');
     }
   }
-
-  // MODIFICADO: Agora retorna um Map com feedback de sucesso ou erro
+  
   Future<Map<String, dynamic>> deleteMedication(String id) async {
     try {
       final token = await _getToken();

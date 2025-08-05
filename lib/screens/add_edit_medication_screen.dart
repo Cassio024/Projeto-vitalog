@@ -1,5 +1,4 @@
 // Arquivo: lib/screens/add_edit_medication_screen.dart
-// MODIFICADO: Salva os dados na API real.
 
 import 'package:flutter/material.dart';
 import '../models/medication_model.dart';
@@ -30,6 +29,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     _schedules = widget.medication?.schedules.join(', ') ?? '';
   }
 
+  // MODIFICAÇÃO: Lógica de envio atualizada para lidar com a resposta da API.
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -39,12 +39,25 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
         final scheduleList = _schedules.split(',').map((e) => e.trim()).toList();
 
         if (_isEditing) {
-          // Lógica de update (ainda não implementada no service, mas a estrutura está aqui)
+          // Lógica de update
         } else {
-          await _medicationService.addMedication(_name, _dosage, scheduleList);
+          // MODIFICAÇÃO: Captura a resposta completa do serviço.
+          final response = await _medicationService.addMedication(_name, _dosage, scheduleList);
+
+          // MODIFICAÇÃO: Extrai o aviso da resposta.
+          final String? warning = response['warning'];
+
+          // MODIFICAÇÃO: Se houver um aviso, exibe o pop-up de alerta.
+          if (warning != null && mounted) {
+            await _showInteractionWarning(context, warning);
+          }
         }
-        // Retorna 'true' para a tela anterior para sinalizar sucesso
-        Navigator.of(context).pop(true);
+        
+        // Só executa o pop após o alerta ter sido (ou não) exibido.
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+
       } catch (e) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -54,9 +67,36 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     }
   }
 
+  // NOVO: Função para exibir o AlertDialog de interação.
+  Future<void> _showInteractionWarning(BuildContext context, String warning) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // O usuário precisa confirmar para fechar.
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              SizedBox(width: 10),
+              Text('Atenção'),
+            ],
+          ),
+          content: Text(warning),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Entendi'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ... (build method com o formulário, mas o botão agora usa a nova lógica)
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Editar Medicamento' : 'Adicionar Medicamento'),
@@ -64,7 +104,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
       body: Center(
         child: SingleChildScrollView(
           child: ConstrainedBox(
-             constraints: const BoxConstraints(maxWidth: 600),
+            constraints: const BoxConstraints(maxWidth: 600),
             child: Form(
               key: _formKey,
               child: Padding(
