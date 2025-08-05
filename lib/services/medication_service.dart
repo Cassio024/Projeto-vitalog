@@ -1,4 +1,4 @@
-// lib/services/medication_service.dart
+// Arquivo: lib/services/medication_service.dart
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -33,7 +33,6 @@ class MedicationService {
     }
   }
 
-  // MODIFICAÇÃO: A função agora retorna o mapa completo da resposta da API.
   Future<Map<String, dynamic>> addMedication(String name, String dosage, List<String> schedules) async {
     final token = await _getToken();
     if (token == null) throw Exception('Não autorizado');
@@ -53,11 +52,36 @@ class MedicationService {
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      // MODIFICAÇÃO: Retorna o JSON decodificado diretamente.
-      // Ele conterá {"medication": {...}, "warning": "..."}
       return json.decode(response.body);
     } else {
       throw Exception('Falha ao adicionar medicamento.');
+    }
+  }
+
+  // NOVO: Função para atualizar um medicamento existente.
+  Future<Map<String, dynamic>> updateMedication(String id, String name, String dosage, List<String> schedules) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('Não autorizado');
+
+    final url = Uri.parse('${ApiConstants.baseUrl}/api/medications/$id');
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token,
+      },
+      body: json.encode({
+        'name': name,
+        'dosage': dosage,
+        'schedules': schedules,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      // Assume que a API de update também pode retornar um aviso.
+      return json.decode(response.body);
+    } else {
+      throw Exception('Falha ao atualizar medicamento.');
     }
   }
   

@@ -29,7 +29,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     _schedules = widget.medication?.schedules.join(', ') ?? '';
   }
 
-  // MODIFICAÇÃO: Lógica de envio atualizada para lidar com a resposta da API.
+  // CORREÇÃO: Lógica de envio unificada para adicionar e editar.
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -37,20 +37,29 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
 
       try {
         final scheduleList = _schedules.split(',').map((e) => e.trim()).toList();
+        
+        // Declara a variável de resposta que será usada por ambos os casos.
+        final Map<String, dynamic> response; 
 
         if (_isEditing) {
-          // Lógica de update
+          // LÓGICA ADICIONADA: Chama o serviço de atualização.
+          // É necessário que seu MedicationModel tenha um campo 'id'.
+          response = await _medicationService.updateMedication(
+            widget.medication!.id,
+            _name,
+            _dosage,
+            scheduleList,
+          );
         } else {
-          // MODIFICAÇÃO: Captura a resposta completa do serviço.
-          final response = await _medicationService.addMedication(_name, _dosage, scheduleList);
+          // Lógica de adição existente.
+          response = await _medicationService.addMedication(_name, _dosage, scheduleList);
+        }
+        
+        // A extração do aviso e exibição do alerta agora é comum para ambos.
+        final String? warning = response['warning'];
 
-          // MODIFICAÇÃO: Extrai o aviso da resposta.
-          final String? warning = response['warning'];
-
-          // MODIFICAÇÃO: Se houver um aviso, exibe o pop-up de alerta.
-          if (warning != null && mounted) {
-            await _showInteractionWarning(context, warning);
-          }
+        if (warning != null && mounted) {
+          await _showInteractionWarning(context, warning);
         }
         
         // Só executa o pop após o alerta ter sido (ou não) exibido.
@@ -59,15 +68,17 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
         }
 
       } catch (e) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: ${e.toString()}')),
-        );
+        if(mounted) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao salvar: ${e.toString()}')),
+            );
+        }
       }
     }
   }
 
-  // NOVO: Função para exibir o AlertDialog de interação.
+  // Função existente para exibir o AlertDialog de interação.
   Future<void> _showInteractionWarning(BuildContext context, String warning) {
     return showDialog<void>(
       context: context,
