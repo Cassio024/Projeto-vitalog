@@ -1,7 +1,8 @@
-// ARQUIVO: lib/screens/chat_screen.dart
+// lib/screens/chat_screen.dart
 
 import 'package:flutter/material.dart';
 import '../models/chat_message_model.dart';
+import '../services/rasa_service.dart'; // <-- IMPORTA O NOSSO SERVIÇO
 import '../widgets/message_bubble.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -20,7 +21,6 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Adiciona uma mensagem inicial do bot
     _messages.insert(0, ChatMessage(
       text: 'Olá! Sou seu assistente virtual. Como posso ajudar com seus medicamentos hoje?',
       sender: MessageSender.bot,
@@ -34,41 +34,33 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
   
-  // Função chamada quando o usuário envia uma mensagem
   void _handleSubmitted(String text) {
     if (text.trim().isEmpty) return;
 
     _textController.clear();
 
-    // Adiciona a mensagem do usuário à lista
     setState(() {
       _messages.insert(0, ChatMessage(text: text, sender: MessageSender.user));
-      _isBotTyping = true; // Mostra o indicador "digitando..."
+      _isBotTyping = true;
     });
 
-    // Anima a lista para a nova mensagem
     _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     
-    // Pega a resposta do Bot
     _getBotResponse(text);
   }
 
-  // AQUI É ONDE SEU AMIGO VAI TRABALHAR
+  // --- ESTA FUNÇÃO FOI MODIFICADA PARA USAR A API REAL ---
   Future<void> _getBotResponse(String userMessage) async {
-    // Simula uma chamada de API com um pequeno atraso
-    await Future.delayed(const Duration(milliseconds: 1500));
-    
-    // =======================================================================
-    // TODO: PARA O DESENVOLVEDOR DE IA
-    // Substitua a linha abaixo pela chamada real à API da sua IA.
-    // A função deve receber 'userMessage' e retornar a resposta da IA.
-    // Exemplo: final String botText = await seuServicoDeIA.obterResposta(userMessage);
-    final String botText = "Entendido. Buscando informações sobre '$userMessage'.";
-    // =======================================================================
+    // Chama a nossa função no rasa_service.dart para obter a resposta real
+    final botResponses = await sendMessageToRasa(userMessage);
 
-    // Adiciona a resposta do bot à lista
+    // Adiciona cada resposta do bot à lista
     setState(() {
-      _messages.insert(0, ChatMessage(text: botText, sender: MessageSender.bot));
+      for (var responseText in botResponses) {
+        if (responseText.isNotEmpty) { // Garante que não adicionamos mensagens vazias
+          _messages.insert(0, ChatMessage(text: responseText, sender: MessageSender.bot));
+        }
+      }
       _isBotTyping = false; // Esconde o indicador "digitando..."
     });
 
@@ -87,7 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16.0),
-              reverse: true, // Faz a lista começar de baixo para cima
+              reverse: true,
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 return MessageBubble(message: _messages[index]);
@@ -111,7 +103,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // Widget para o campo de texto e botão de enviar
   Widget _buildTextComposer() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
