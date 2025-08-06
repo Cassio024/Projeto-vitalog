@@ -61,7 +61,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    const Icon(Icons.shield_outlined, size: 60, color: AppColors.primary),
+                    // LINHA ALTERADA AQUI
+                    Image.asset('assets/images/logo_vitalog.png', height: 80), 
                     const SizedBox(height: 16),
                     const Text('Bem-vindo ao VitaLog', textAlign: TextAlign.center, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                     const SizedBox(height: 8),
