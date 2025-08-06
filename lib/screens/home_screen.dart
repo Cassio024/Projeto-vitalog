@@ -1,4 +1,4 @@
-// ARQUIVO MODIFICADO: lib/screens/home_screen.dart
+// ARQUIVO CORRIGIDO: lib/screens/home_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +9,7 @@ import '../services/medication_service.dart';
 import '../widgets/medication_card.dart';
 import 'add_edit_medication_screen.dart';
 import 'scanner_screen.dart';
-import 'chat_screen.dart'; // <-- NOVO: Importa a tela de chat
+// import 'chat_screen.dart'; // <-- REMOVIDO
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -124,36 +124,17 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-
-      // ----- INÍCIO DA MODIFICAÇÃO -----
-      // Substituímos o FloatingActionButton único por uma Row com dois botões.
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: 'addMedicationFab', // heroTag é importante quando há múltiplos FABs
-            onPressed: () async {
-              final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
-              if (result == true) {
-                _refreshMedications();
-              }
-            },
-            child: const Icon(Icons.add),
-          ),
-          const SizedBox(width: 10), // Espaçamento entre os botões
-          FloatingActionButton(
-            heroTag: 'chatFab',
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const ChatScreen(),
-              ));
-            },
-            backgroundColor: Colors.deepPurple, // Cor diferente para destacar
-            child: const Icon(Icons.chat_bubble_outline),
-          ),
-        ],
+      // ----- MODIFICAÇÃO REALIZADA AQUI -----
+      // A Row com dois botões foi removida e voltámos a ter apenas o botão original.
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
+          if (result == true) {
+            _refreshMedications();
+          }
+        },
+        child: const Icon(Icons.add),
       ),
-      // ----- FIM DA MODIFICAÇÃO -----
     );
   }
 }
