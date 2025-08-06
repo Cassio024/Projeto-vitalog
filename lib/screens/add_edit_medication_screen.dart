@@ -1,4 +1,5 @@
-// Arquivo: lib/screens/add_edit_medication_screen.dart
+// ARQUIVO CORRIGIDO E FINALIZADO: lib/screens/add_edit_medication_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/medication_model.dart';
@@ -55,11 +56,9 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     }
     
     try {
-      // ----- INÍCIO DA MODIFICAÇÃO (Solução Rápida) -----
-      // O bloco de código abaixo foi comentado para desabilitar a chamada à
-      // API de verificação de interações (/api/interactions/check), que estava
-      // causando o erro 404 pois a rota não existe no seu backend ainda.
-      /*
+      // ----- INÍCIO DA MODIFICAÇÃO -----
+      // O CÓDIGO DE VERIFICAÇÃO DE INTERAÇÕES FOI REATIVADO
+      
       final currentMeds = await medicationService.getMedications(token);
       final List<String> medNamesForCheck = currentMeds.map((m) {
         if (_isEditing && m.id == widget.medication!.id) {
@@ -79,7 +78,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
         canProceed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Alerta de Interação'),
+            title: const Text('Alerta!'),
             content: Text((interactionResult['warnings'] as List<dynamic>).join('\n')),
             actions: [
               TextButton(
@@ -94,11 +93,8 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
           ),
         ) ?? false;
       }
-      */
-
-      // Como o bloco acima foi desabilitado, definimos 'canProceed' como 'true'
-      // para que o código de salvar o medicamento seja executado.
-      bool canProceed = true;
+      
+      // A linha "bool canProceed = true;" que estava aqui foi REMOVIDA
       // ----- FIM DA MODIFICAÇÃO -----
 
       if (canProceed) {
@@ -118,7 +114,6 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        // Adicionamos um print para ver o erro no console de depuração
         print('ERRO NO SUBMITFORM: $e'); 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao salvar: ${e.toString()}'))
