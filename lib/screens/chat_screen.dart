@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import '../models/chat_message_model.dart';
 import '../widgets/message_bubble.dart';
+// Importe o serviço Rasa
+import '../services/rasa_service.dart'; // Adicionado: Importa o arquivo de serviço do Rasa
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -55,24 +57,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // AQUI É ONDE SEU AMIGO VAI TRABALHAR
   Future<void> _getBotResponse(String userMessage) async {
-    // Simula uma chamada de API com um pequeno atraso
-    await Future.delayed(const Duration(milliseconds: 1500));
-    
     // =======================================================================
-    // TODO: PARA O DESENVOLVEDOR DE IA
-    // Substitua a linha abaixo pela chamada real à API da sua IA.
-    // A função deve receber 'userMessage' e retornar a resposta da IA.
-    // Exemplo: final String botText = await seuServicoDeIA.obterResposta(userMessage);
-    final String botText = "Entendido. Buscando informações sobre '$userMessage'.";
+    // MODIFICADO: Chamada real à API do Rasa
+    // Substitua a simulação de atraso e o texto fixo pela chamada ao seu serviço Rasa.
+    try {
+      final List<String> botResponses = await sendMessageToRasa(userMessage);
+      
+      // Itera sobre as respostas do bot (Rasa pode retornar múltiplas mensagens)
+      for (String botText in botResponses) {
+        setState(() {
+          _messages.insert(0, ChatMessage(text: botText, sender: MessageSender.bot));
+        });
+      }
+    } catch (e) {
+      // Em caso de erro na comunicação com o Rasa
+      setState(() {
+        _messages.insert(0, ChatMessage(text: 'Desculpe, não foi possível conectar ao assistente. Erro: $e', sender: MessageSender.bot));
+      });
+    } finally {
+      setState(() {
+        _isBotTyping = false; // Esconde o indicador "digitando..."
+      });
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
     // =======================================================================
-
-    // Adiciona a resposta do bot à lista
-    setState(() {
-      _messages.insert(0, ChatMessage(text: botText, sender: MessageSender.bot));
-      _isBotTyping = false; // Esconde o indicador "digitando..."
-    });
-
-    _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
   }
 
   @override
