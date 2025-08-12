@@ -1,4 +1,4 @@
-// ARQUIVO CORRIGIDO: lib/screens/home_screen.dart
+// ARQUIVO ATUALIZADO: lib/screens/home_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +9,7 @@ import '../services/medication_service.dart';
 import '../widgets/medication_card.dart';
 import 'add_edit_medication_screen.dart';
 import 'scanner_screen.dart';
-// import 'chat_screen.dart'; // <-- REMOVIDO
+import 'chatbot_screen.dart'; // <-- ADICIONADO
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -124,16 +124,40 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      // ----- MODIFICAÇÃO REALIZADA AQUI -----
-      // A Row com dois botões foi removida e voltámos a ter apenas o botão original.
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
-          if (result == true) {
-            _refreshMedications();
-          }
-        },
-        child: const Icon(Icons.add),
+      // ----- BLOCO ATUALIZADO -----
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(left: 32.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // Botão para o Chatbot
+            FloatingActionButton(
+              heroTag: 'fab_chatbot',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ChatScreen()),
+                );
+              },
+              tooltip: 'Abrir Chatbot',
+              child: const Icon(Icons.support_agent),
+            ),
+            
+            const SizedBox(width: 10),
+
+            // Botão para Adicionar Medicamento
+            FloatingActionButton(
+              heroTag: 'fab_add_medication',
+              onPressed: () async {
+                final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
+                if (result == true) {
+                  _refreshMedications();
+                }
+              },
+              tooltip: 'Adicionar Medicamento',
+              child: const Icon(Icons.add),
+            ),
+          ],
+        ),
       ),
     );
   }

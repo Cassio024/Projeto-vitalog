@@ -23,7 +23,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _messages.insert(0, ChatMessage(
-      text: 'Olá! Sou seu assistente virtual VitaLog. Faça uma pergunta sobre um medicamento.',
+      text: 'Olá! Sou o assistente virtual VitaLog. Como posso ajudar?',
       sender: MessageSender.bot,
     ));
   }
@@ -48,8 +48,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _getBotResponse(text);
   }
 
-  // VERSÃO FINAL COM CHAMADA REAL À API
+  // VERSÃO FINAL COM CHAMADA REAL À SUA API
   Future<void> _getBotResponse(String userMessage) async {
+    // URL da SUA API no Render, que por sua vez chama a Groq
     const String chatApiUrl = 'https://vitalog-api.onrender.com/api/chatbot/query';
     String botText = "Desculpe, ocorreu um erro. Tente novamente.";
 
@@ -57,9 +58,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final authService = Provider.of<AuthService>(context, listen: false);
       final token = authService.token;
 
-      if (token == null) {
-        throw Exception('Utilizador não autenticado');
-      }
+      if (token == null) throw Exception('Utilizador não autenticado');
 
       final response = await http.post(
         Uri.parse(chatApiUrl),
@@ -74,7 +73,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final data = json.decode(response.body);
         botText = data['response'];
       } else {
-        botText = 'O assistente está indisponível no momento.';
+        botText = 'O assistente está indisponível no momento. Tente mais tarde.';
         print('Erro na API do chatbot: ${response.statusCode} | ${response.body}');
       }
     } catch (e) {
@@ -82,6 +81,7 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Erro de conexão com o chatbot: $e');
     }
 
+    // Adiciona a resposta à lista
     setState(() {
       _messages.insert(0, ChatMessage(text: botText, sender: MessageSender.bot));
       _isBotTyping = false;
@@ -94,7 +94,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assistente Virtual'),
+        title: const Text('Assistente Virtual VitaLog'),
+        backgroundColor: Colors.teal,
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w500),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
@@ -114,24 +117,24 @@ class _ChatScreenState extends State<ChatScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
                 children: [
-                  CircularProgressIndicator(strokeWidth: 2.0, valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor)),
+                  CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor)),
                   const SizedBox(width: 12.0),
-                  const Text('Assistente a pensar...'),
+                  const Text('VitaLog está a pensar...'),
                 ],
               ),
             ),
-          _buildTextComposer(),
+          _buildInputComposer(),
         ],
       ),
     );
   }
 
-  Widget _buildTextComposer() {
+  Widget _buildInputComposer() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        boxShadow: [BoxShadow(offset: const Offset(0, -1), blurRadius: 2, color: Colors.black.withOpacity(0.1))]
+        boxShadow: [BoxShadow(offset: const Offset(0, -1), blurRadius: 4, color: Colors.black.withOpacity(0.08))]
       ),
       child: Row(
         children: [
