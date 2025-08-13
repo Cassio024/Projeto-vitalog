@@ -2,5 +2,5 @@
 
 class ApiConstants {
   // Este é o endereço CORRETO e ÚNICO que seu app deve usar.
-  static const String baseUrl = 'https://vitalog-back-end.onrender.com';
+  static const String baseUrl = 'https://vitalog-api-nova.onrender.com';
 }
