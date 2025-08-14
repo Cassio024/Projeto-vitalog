@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../services/auth_service.dart';
 import '../models/chat_message_model.dart';
 import '../widgets/message_bubble.dart';
 
