@@ -48,30 +48,41 @@ class _ChatScreenState extends State<ChatScreen> {
     _getBotResponse(text);
   }
 
-  // VERSÃO FINAL COM CHAMADA REAL À SUA API
+  // VERSÃO ATUALIZADA PARA O NOVO ENDPOINT /ask
   Future<void> _getBotResponse(String userMessage) async {
-    // URL da SUA API no Render, que por sua vez chama a Groq
-    const String chatApiUrl = 'https://vitalog-api.onrender.com/api/chatbot/query';
+    // URL atualizada para o novo endpoint /ask
+    const String chatApiUrl = 'https://vitalog-api-nova.onrender.com/ask';
     String botText = "Desculpe, ocorreu um erro. Tente novamente.";
 
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final token = authService.token;
-
-      if (token == null) throw Exception('Utilizador não autenticado');
-
       final response = await http.post(
         Uri.parse(chatApiUrl),
         headers: {
           'Content-Type': 'application/json',
-          'x-auth-token': token,
         },
-        body: json.encode({'message': userMessage}),
+        body: json.encode({
+          'message': userMessage,
+          'conversationHistory': [] // Pode adicionar histórico depois se quiser
+        }),
       );
+
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        botText = data['response'];
+        if (data['success'] == true && data['data'] != null) {
+          botText = data['data']['response'];
+        } else {
+          botText = data['error'] ?? 'Resposta inválida da API';
+        }
+      } else if (response.statusCode == 400) {
+        final data = json.decode(response.body);
+        botText = data['error'] ?? 'Mensagem inválida. Tente reformular sua pergunta.';
+      } else if (response.statusCode == 429) {
+        botText = 'Muitas requisições. Aguarde um momento e tente novamente.';
+      } else if (response.statusCode == 503) {
+        botText = 'Serviço temporariamente indisponível. Tente novamente em alguns minutos.';
       } else {
         botText = 'O assistente está indisponível no momento. Tente mais tarde.';
         print('Erro na API do chatbot: ${response.statusCode} | ${response.body}');
