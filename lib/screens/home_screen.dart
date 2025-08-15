@@ -28,23 +28,34 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _refreshMedications() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final medicationService = Provider.of<MedicationService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: true);
+    final medicationService = Provider.of<MedicationService>(
+      context,
+      listen: false,
+    );
     if (authService.token != null) {
       setState(() {
-        _medicationsFuture = medicationService.getMedications(authService.token!);
+        _medicationsFuture = medicationService.getMedications(
+          authService.token!,
+        );
       });
     }
   }
 
   Future<void> _deleteMedication(String medicationId) async {
     final authService = Provider.of<AuthService>(context, listen: false);
-    final medicationService = Provider.of<MedicationService>(context, listen: false);
-    
+    final medicationService = Provider.of<MedicationService>(
+      context,
+      listen: false,
+    );
+
     if (authService.token == null) return;
 
     try {
-      await medicationService.deleteMedication(medicationId, authService.token!);
+      await medicationService.deleteMedication(
+        medicationId,
+        authService.token!,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Medicamento deletado com sucesso!')),
@@ -73,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: true);
     final user = Provider.of<UserModel?>(context);
 
     if (user == null) {
@@ -82,11 +93,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Olá, ${user.name ?? 'Utilizador'}'),
+        title: Text(
+          'Olá ${user.name ?? ''}',
+          style: const TextStyle(color: Color.fromARGB(255, 250, 250, 250)),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScannerScreen())),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ScannerScreen())),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -101,7 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Erro ao carregar dados: ${snapshot.error}'));
+            return Center(
+              child: Text('Erro ao carregar dados: ${snapshot.error}'),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('Nenhum medicamento cadastrado.'));
@@ -116,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final medication = medications[index];
                 return MedicationCard(
                   medication: medication,
-                  onEdit: () => _navigateToEditScreen(medication), 
+                  onEdit: () => _navigateToEditScreen(medication),
                   onDelete: () => _deleteMedication(medication.id),
                 );
               },
@@ -134,21 +152,25 @@ class _HomeScreenState extends State<HomeScreen> {
             FloatingActionButton(
               heroTag: 'fab_chatbot',
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ChatScreen()),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const ChatScreen()));
               },
               tooltip: 'Abrir Chatbot',
               child: const Icon(Icons.support_agent),
             ),
-            
+
             const SizedBox(width: 10),
 
             // Botão para Adicionar Medicamento
             FloatingActionButton(
               heroTag: 'fab_add_medication',
               onPressed: () async {
-                final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const AddEditMedicationScreen(),
+                  ),
+                );
                 if (result == true) {
                   _refreshMedications();
                 }
