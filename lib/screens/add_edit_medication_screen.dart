@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/medication_model.dart';
 import '../services/medication_service.dart';
 import '../services/auth_service.dart';
+import '../services/alarm_service.dart';
 
 class AddEditMedicationScreen extends StatefulWidget {
   final Medication? medication;
@@ -25,6 +26,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
   final List<int> _intervalOptions = [4, 6, 8, 12, 24];
 
   bool _isLoading = false;
+  late String medicationId;
   bool get _isEditing => widget.medication != null;
 
   @override
@@ -63,12 +65,10 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     final picked = await showTimePicker(
       context: context,
       initialTime: _startTime ?? TimeOfDay.now(),
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-          child: child!,
-        );
-      },
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
     );
     if (picked != null) {
       setState(() {
@@ -82,9 +82,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     if (_selectedInterval == null ||
         _startTime == null ||
         _selectedInterval == 0) {
-      setState(() {
-        _generatedSchedules = [];
-      });
+      setState(() => _generatedSchedules = []);
       return;
     }
 
@@ -98,117 +96,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
       );
       hour = (hour + _selectedInterval!) % 24;
     }
-
-    setState(() {
-      _generatedSchedules = schedules;
-    });
-  }
-
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_selectedInterval == null || _startTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Escolha o intervalo e o horário inicial!'),
-        ),
-      );
-      return;
-    }
-
-    if (_generatedSchedules.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Os horários não foram gerados!')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    final medicationService = Provider.of<MedicationService>(
-      context,
-      listen: false,
-    );
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final token = authService.token;
-
-    if (token == null) {
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    try {
-      final currentMeds = await medicationService.getMedications(token);
-      final List<String> medNamesForCheck = currentMeds.map((m) {
-        if (_isEditing && m.id == widget.medication!.id) {
-          return _nameController.text;
-        }
-        return m.name;
-      }).toList();
-
-      if (!_isEditing) {
-        medNamesForCheck.add(_nameController.text);
-      }
-
-      final interactionResult = await medicationService.checkInteractions(
-        medNamesForCheck,
-        token,
-      );
-
-      bool canProceed = true;
-      if (mounted && interactionResult['hasInteraction'] == true) {
-        canProceed =
-            await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Alerta!'),
-                content: Text(
-                  (interactionResult['warnings'] as List<dynamic>).join('\n'),
-                ),
-                actions: [
-                  TextButton(
-                    child: const Text('Cancelar'),
-                    onPressed: () => Navigator.of(context).pop(false),
-                  ),
-                  TextButton(
-                    child: const Text('Continuar Mesmo Assim'),
-                    onPressed: () => Navigator.of(context).pop(true),
-                  ),
-                ],
-              ),
-            ) ??
-            false;
-      }
-
-      if (canProceed) {
-        final medicationData = {
-          'name': _nameController.text,
-          'dosage': _dosageController.text,
-          'schedules': _generatedSchedules,
-        };
-
-        if (_isEditing) {
-          await medicationService.updateMedication(
-            widget.medication!.id,
-            medicationData,
-            token,
-          );
-        } else {
-          await medicationService.addMedication(medicationData, token);
-        }
-
-        if (mounted) Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      if (mounted) {
-        print('ERRO NO SUBMITFORM: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: ${e.toString()}')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    setState(() => _generatedSchedules = schedules);
   }
 
   Future<void> _pickInterval() async {
@@ -216,12 +104,14 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
       context: context,
       builder: (context) => SimpleDialog(
         title: const Text('Escolher intervalo (em horas)'),
-        children: _intervalOptions.map((value) {
-          return SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, value),
-            child: Text('$value horas'),
-          );
-        }).toList(),
+        children: _intervalOptions
+            .map(
+              (value) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, value),
+                child: Text('$value horas'),
+              ),
+            )
+            .toList(),
       ),
     );
     if (picked != null) {
@@ -288,7 +178,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                 onTap: _pickStartTime,
                 child: InputDecorator(
                   decoration: const InputDecoration(
-                    labelText: 'Horário inicial',
+                    labelText: 'Horário Inicial',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -303,31 +193,231 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Remova a exibição dos horários gerados:
-              // if (_generatedSchedules.isNotEmpty)
-              //   Column(
-              //     crossAxisAlignment: CrossAxisAlignment.start,
-              //     children: [
-              //       ..._generatedSchedules.map((h) => Text(h)).toList(),
-              //     ],
-              //   ),
-              const SizedBox(height: 32),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _submitForm,
-                      child: Text(
-                        _isEditing
-                            ? 'Salvar Alterações'
-                            : 'Adicionar Medicamento',
-                      ),
-                    ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label: Text(_isEditing ? 'Salvar Alterações' : 'Adicionar'),
+                  onPressed: _isLoading ? null : () => _submitForm(),
+                ),
+              ),
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.only(top: 16),
+                  child: CircularProgressIndicator(),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedInterval == null || _startTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Escolha o intervalo e o horário inicial!'),
+        ),
+      );
+      return;
+    }
+
+    if (_generatedSchedules.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Os horários não foram gerados!')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final medicationService = Provider.of<MedicationService>(
+      context,
+      listen: false,
+    );
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final alarmService = Provider.of<AlarmService>(context, listen: false);
+    final token = authService.token;
+
+    if (token == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final currentMeds = await medicationService.getMedications(token);
+
+      // CORREÇÃO: Criar lista de medicamentos para verificação de interações
+      List<String> medNamesForCheck = [];
+
+      if (_isEditing) {
+        // Para edição: adicionar todos os medicamentos EXCETO o que está sendo editado
+        medNamesForCheck = currentMeds
+            .where((m) => m.id != widget.medication!.id)
+            .map((m) => m.name)
+            .toList();
+        // Adicionar o novo nome do medicamento que está sendo editado
+        medNamesForCheck.add(_nameController.text);
+      } else {
+        // Para adição: adicionar todos os medicamentos existentes
+        medNamesForCheck = currentMeds.map((m) => m.name).toList();
+        // Adicionar o novo medicamento
+        medNamesForCheck.add(_nameController.text);
+      }
+
+      // Debug: imprimir a lista para verificação
+      print('Medicamentos para verificação: $medNamesForCheck');
+
+      // Verificar interações apenas se houver mais de 1 medicamento
+      bool canProceed = true;
+      if (medNamesForCheck.length > 1) {
+        final interactionResult = await medicationService.checkInteractions(
+          medNamesForCheck,
+          token,
+        );
+
+        print('Resultado da API: $interactionResult'); // Debug adicional
+
+        if (mounted && interactionResult['hasInteraction'] == true) {
+          canProceed =
+              await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('⚠️ Interação Medicamentosa Detectada!'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Foram detectadas possíveis interações entre os medicamentos:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Medicamentos: ${medNamesForCheck.join(', ')}',
+                        style: const TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Advertências:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      ...((interactionResult['warnings'] as List<dynamic>?)
+                              ?.map(
+                                (warning) => Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 8.0,
+                                    top: 4.0,
+                                  ),
+                                  child: Text(
+                                    '• $warning',
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ) ??
+                          []),
+                      const SizedBox(height: 15),
+                      const Text(
+                        'Deseja continuar mesmo assim?',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                      child: const Text('Cancelar'),
+                      onPressed: () => Navigator.of(context).pop(false),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Continuar Mesmo Assim'),
+                      onPressed: () => Navigator.of(context).pop(true),
+                    ),
+                  ],
+                ),
+              ) ??
+              false;
+        }
+      }
+
+      // Se o usuário cancelou, pare o processo
+      if (!canProceed) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Continuar com a lógica de salvar o medicamento
+      final medicationData = {
+        'name': _nameController.text,
+        'dosage': _dosageController.text,
+        'schedules': _generatedSchedules,
+      };
+
+      late String medicationId;
+      if (_isEditing) {
+        medicationId = widget.medication!.id;
+        alarmService.cancelAlarmsForMedication(medicationId);
+        await medicationService.updateMedication(
+          medicationId,
+          medicationData,
+          token,
+        );
+      } else {
+        final response = await medicationService.addMedication(
+          medicationData,
+          token,
+        );
+        medicationId = (response['id'] ?? response['_id'])?.toString() ?? '';
+        if (medicationId == 'null' || medicationId.isEmpty) {
+          throw Exception('ID inválido retornado pela API');
+        }
+      }
+
+      final now = DateTime.now();
+      final List<DateTime> alarmTimes = _generatedSchedules.map((timeStr) {
+        final parts = timeStr.split(':');
+        var time = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+        );
+        if (time.isBefore(now)) time = time.add(const Duration(days: 1));
+        return time;
+      }).toList();
+
+      if (alarmTimes.isNotEmpty && _selectedInterval != null) {
+        alarmService.generateAlarms(
+          medicationId: medicationId,
+          medicationName: _nameController.text,
+          startTime: alarmTimes.first,
+          interval: Duration(hours: _selectedInterval!),
+          count: alarmTimes.length,
+        );
+      }
+
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        print('ERRO NO SUBMITFORM: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }

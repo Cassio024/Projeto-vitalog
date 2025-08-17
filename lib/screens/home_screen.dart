@@ -1,34 +1,33 @@
-// ARQUIVO ATUALIZADO: lib/screens/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/medication_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/medication_service.dart';
+import '../services/alarm_service.dart'; // ✅ Import do AlarmService
 import '../widgets/medication_card.dart';
 import 'add_edit_medication_screen.dart';
 import 'scanner_screen.dart';
-import 'chatbot_screen.dart'; // <-- ADICIONADO
+import 'chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   Future<List<Medication>>? _medicationsFuture;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
     _refreshMedications();
   }
 
   Future<void> _refreshMedications() async {
-    final authService = Provider.of<AuthService>(context, listen: true);
+    final authService = Provider.of<AuthService>(context, listen: false);
     final medicationService = Provider.of<MedicationService>(
       context,
       listen: false,
@@ -48,6 +47,10 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       listen: false,
     );
+    final alarmService = Provider.of<AlarmService>(context, listen: false);
+
+    // ✅ Cancela apenas os alarmes deste medicamento
+    alarmService.cancelAlarmsForMedication(medicationId);
 
     if (authService.token == null) return;
 
@@ -60,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Medicamento deletado com sucesso!')),
         );
+        _refreshMedications();
       }
-      _refreshMedications();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -71,7 +74,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _navigateToEditScreen(Medication medication) async {
+  Future<void> _navigateToAddMedication() async {
+    final result = await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
+    if (result == true) {
+      _refreshMedications();
+    }
+  }
+
+  Future<void> _navigateToEditMedication(Medication medication) async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => AddEditMedicationScreen(medication: medication),
@@ -95,14 +107,16 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(
           'Olá ${user.name ?? ''}',
-          style: const TextStyle(color: Color.fromARGB(255, 250, 250, 250)),
+          style: const TextStyle(color: Colors.white),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const ScannerScreen())),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ScannerScreen()));
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -134,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final medication = medications[index];
                 return MedicationCard(
                   medication: medication,
-                  onEdit: () => _navigateToEditScreen(medication),
+                  onEdit: () => _navigateToEditMedication(medication),
                   onDelete: () => _deleteMedication(medication.id),
                 );
               },
@@ -165,16 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Botão para Adicionar Medicamento
             FloatingActionButton(
               heroTag: 'fab_add_medication',
-              onPressed: () async {
-                final result = await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const AddEditMedicationScreen(),
-                  ),
-                );
-                if (result == true) {
-                  _refreshMedications();
-                }
-              },
+              onPressed: _navigateToAddMedication,
               tooltip: 'Adicionar Medicamento',
               child: const Icon(Icons.add),
             ),

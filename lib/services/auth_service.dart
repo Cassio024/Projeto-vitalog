@@ -8,13 +8,18 @@ import '../utils/constants.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AuthService with ChangeNotifier {
-  final StreamController<UserModel?> _userController = StreamController<UserModel?>.broadcast();
+  final StreamController<UserModel?> _userController =
+      StreamController<UserModel?>.broadcast();
   Stream<UserModel?> get user => _userController.stream;
   String? _token;
 
   String? get token => _token;
 
-  Future<Map<String, dynamic>> registerWithEmailAndPassword(String name, String email, String password) async {
+  Future<Map<String, dynamic>> registerWithEmailAndPassword(
+    String name,
+    String email,
+    String password,
+  ) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/register');
     try {
       final response = await http.post(
@@ -26,14 +31,23 @@ class AuthService with ChangeNotifier {
       if (response.statusCode == 200) {
         return {'success': true, 'data': responseData};
       } else {
-        return {'success': false, 'message': responseData['msg'] ?? 'Erro desconhecido'};
+        return {
+          'success': false,
+          'message': responseData['msg'] ?? 'Erro desconhecido',
+        };
       }
     } catch (error) {
-      return {'success': false, 'message': 'Não foi possível conectar ao servidor.'};
+      return {
+        'success': false,
+        'message': 'Não foi possível conectar ao servidor.',
+      };
     }
   }
 
-  Future<Map<String, dynamic>> signInWithEmailAndPassword(String email, String password) async {
+  Future<Map<String, dynamic>> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/login');
     try {
       final response = await http.post(
@@ -51,11 +65,17 @@ class AuthService with ChangeNotifier {
         return {'success': true};
       } else {
         _userController.add(null);
-        return {'success': false, 'message': responseData['msg'] ?? 'Credenciais inválidas'};
+        return {
+          'success': false,
+          'message': responseData['msg'] ?? 'Credenciais inválidas',
+        };
       }
     } catch (error) {
       _userController.add(null);
-      return {'success': false, 'message': 'Não foi possível conectar ao servidor.'};
+      return {
+        'success': false,
+        'message': 'Não foi possível conectar ao servidor.',
+      };
     }
   }
 
@@ -71,14 +91,24 @@ class AuthService with ChangeNotifier {
       if (response.statusCode == 200) {
         return {'success': true, 'message': responseData['msg']};
       } else {
-        return {'success': false, 'message': responseData['msg'] ?? 'Erro ao enviar email.'};
+        return {
+          'success': false,
+          'message': responseData['msg'] ?? 'Erro ao enviar email.',
+        };
       }
     } catch (error) {
-      return {'success': false, 'message': 'Não foi possível conectar ao servidor.'};
+      return {
+        'success': false,
+        'message': 'Não foi possível conectar ao servidor.',
+      };
     }
   }
-  
-  Future<Map<String, dynamic>> resetPassword(String email, String code, String password) async {
+
+  Future<Map<String, dynamic>> resetPassword(
+    String email,
+    String code,
+    String password,
+  ) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/auth/reset-password');
     try {
       final response = await http.post(
@@ -90,10 +120,16 @@ class AuthService with ChangeNotifier {
       if (response.statusCode == 200) {
         return {'success': true, 'message': responseData['msg']};
       } else {
-        return {'success': false, 'message': responseData['msg'] ?? 'Erro ao redefinir senha.'};
+        return {
+          'success': false,
+          'message': responseData['msg'] ?? 'Erro ao redefinir senha.',
+        };
       }
     } catch (error) {
-      return {'success': false, 'message': 'Não foi possível conectar ao servidor.'};
+      return {
+        'success': false,
+        'message': 'Não foi possível conectar ao servidor.',
+      };
     }
   }
 
