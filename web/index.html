@@ -31,6 +31,30 @@
 
   <title>vitalog</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- 🔥 Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js"></script>
+
+  <!-- 🔧 Inicialização do Firebase -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDi9fsLQSnFn59793ChF3TKIIL3jzvTmNI",
+      authDomain: "vitalog-ac0ba.firebaseapp.com",
+      projectId: "vitalog-ac0ba",
+      storageBucket: "vitalog-ac0ba.firebasestorage.app",
+      messagingSenderId: "939108005872",
+      appId: "1:939108005872:web:40f2e19899c1915c010f35",
+      measurementId: "G-CHG3VQH33Q"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+  </script>
+
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

@@ -20,8 +20,11 @@ class MedicationService {
       final response = await http.get(url, headers: _getHeaders(token));
 
       // MELHORIA: Lança um erro se a requisição falhar.
-      if (response.statusCode != HttpStatus.ok) { // HttpStatus.ok == 200
-        throw Exception('Falha ao carregar os medicamentos: ${response.statusCode}');
+      if (response.statusCode != HttpStatus.ok) {
+        // HttpStatus.ok == 200
+        throw Exception(
+          'Falha ao carregar os medicamentos: ${response.statusCode}',
+        );
       }
 
       final List<dynamic> data = json.decode(response.body);
@@ -32,7 +35,10 @@ class MedicationService {
     }
   }
 
-  Future<void> addMedication(Map<String, dynamic> data, String token) async {
+  Future<Map<String, dynamic>> addMedication(
+    Map<String, dynamic> data,
+    String token,
+  ) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/medications');
     try {
       final response = await http.post(
@@ -41,16 +47,24 @@ class MedicationService {
         body: json.encode(data),
       );
 
-      // CORREÇÃO: Verifica se a criação foi bem-sucedida (201 Created)
-      if (response.statusCode != HttpStatus.created && response.statusCode != HttpStatus.ok) {
-        throw Exception('Falha ao adicionar medicamento: ${response.statusCode}');
+      if (response.statusCode != HttpStatus.created &&
+          response.statusCode != HttpStatus.ok) {
+        throw Exception(
+          'Falha ao adicionar medicamento: ${response.statusCode}',
+        );
       }
+      print(response);
+      return json.decode(response.body); // ✅ retorna o JSON com 'id'
     } catch (e) {
       throw Exception('Erro de conexão ao adicionar medicamento: $e');
     }
   }
 
-  Future<void> updateMedication(String medId, Map<String, dynamic> data, String token) async {
+  Future<void> updateMedication(
+    String medId,
+    Map<String, dynamic> data,
+    String token,
+  ) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/medications/$medId');
     try {
       final response = await http.put(
@@ -58,10 +72,12 @@ class MedicationService {
         headers: _getHeaders(token),
         body: json.encode(data),
       );
-      
+
       // CORREÇÃO: Verifica se a atualização foi bem-sucedida (200 OK)
       if (response.statusCode != HttpStatus.ok) {
-        throw Exception('Falha ao atualizar medicamento: ${response.statusCode}');
+        throw Exception(
+          'Falha ao atualizar medicamento: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Erro de conexão ao atualizar medicamento: $e');
@@ -72,18 +88,22 @@ class MedicationService {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/medications/$medId');
     try {
       final response = await http.delete(url, headers: _getHeaders(token));
-      
+
       // CORREÇÃO: Verifica se a deleção foi bem-sucedida (200 OK ou 204 No Content)
-      if (response.statusCode != HttpStatus.ok && response.statusCode != HttpStatus.noContent) {
+      if (response.statusCode != HttpStatus.ok &&
+          response.statusCode != HttpStatus.noContent) {
         throw Exception('Falha ao deletar medicamento: ${response.statusCode}');
       }
     } catch (e) {
-     throw Exception('Erro de conexão ao deletar medicamento: $e');
+      throw Exception('Erro de conexão ao deletar medicamento: $e');
     }
   }
 
   // Os métodos abaixo já tinham try/catch, mas vamos padronizar para lançar exceções.
-  Future<Map<String, dynamic>> checkInteractions(List<String> medicationNames, String token) async {
+  Future<Map<String, dynamic>> checkInteractions(
+    List<String> medicationNames,
+    String token,
+  ) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/interactions/check');
     try {
       final response = await http.post(
@@ -93,7 +113,9 @@ class MedicationService {
       );
 
       if (response.statusCode != HttpStatus.ok) {
-        throw Exception('Falha ao verificar interações: ${response.statusCode}');
+        throw Exception(
+          'Falha ao verificar interações: ${response.statusCode}',
+        );
       }
       return json.decode(response.body);
     } catch (e) {
@@ -101,13 +123,18 @@ class MedicationService {
     }
   }
 
-  Future<Map<String, dynamic>> verifyAuthenticity(String qrCodeId, String token) async {
+  Future<Map<String, dynamic>> verifyAuthenticity(
+    String qrCodeId,
+    String token,
+  ) async {
     final url = Uri.parse('${ApiConstants.baseUrl}/api/drugs/verify/$qrCodeId');
     try {
       final response = await http.get(url, headers: _getHeaders(token));
 
       if (response.statusCode != HttpStatus.ok) {
-        throw Exception('Falha ao verificar autenticidade: ${response.statusCode}');
+        throw Exception(
+          'Falha ao verificar autenticidade: ${response.statusCode}',
+        );
       }
       return json.decode(response.body);
     } catch (e) {

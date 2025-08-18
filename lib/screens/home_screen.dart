@@ -1,56 +1,70 @@
-// ARQUIVO ATUALIZADO: lib/screens/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/medication_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/medication_service.dart';
+import '../services/alarm_service.dart'; // ✅ Import do AlarmService
 import '../widgets/medication_card.dart';
 import 'add_edit_medication_screen.dart';
 import 'scanner_screen.dart';
-import 'chatbot_screen.dart'; // <-- ADICIONADO
+import 'chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   Future<List<Medication>>? _medicationsFuture;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
     _refreshMedications();
   }
 
   Future<void> _refreshMedications() async {
     final authService = Provider.of<AuthService>(context, listen: false);
-    final medicationService = Provider.of<MedicationService>(context, listen: false);
+    final medicationService = Provider.of<MedicationService>(
+      context,
+      listen: false,
+    );
     if (authService.token != null) {
       setState(() {
-        _medicationsFuture = medicationService.getMedications(authService.token!);
+        _medicationsFuture = medicationService.getMedications(
+          authService.token!,
+        );
       });
     }
   }
 
   Future<void> _deleteMedication(String medicationId) async {
     final authService = Provider.of<AuthService>(context, listen: false);
-    final medicationService = Provider.of<MedicationService>(context, listen: false);
-    
+    final medicationService = Provider.of<MedicationService>(
+      context,
+      listen: false,
+    );
+    final alarmService = Provider.of<AlarmService>(context, listen: false);
+
+    // ✅ Cancela apenas os alarmes deste medicamento
+    alarmService.cancelAlarmsForMedication(medicationId);
+
     if (authService.token == null) return;
 
     try {
-      await medicationService.deleteMedication(medicationId, authService.token!);
+      await medicationService.deleteMedication(
+        medicationId,
+        authService.token!,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Medicamento deletado com sucesso!')),
         );
+        _refreshMedications();
       }
-      _refreshMedications();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,7 +74,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _navigateToEditScreen(Medication medication) async {
+  Future<void> _navigateToAddMedication() async {
+    final result = await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
+    if (result == true) {
+      _refreshMedications();
+    }
+  }
+
+  Future<void> _navigateToEditMedication(Medication medication) async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => AddEditMedicationScreen(medication: medication),
@@ -73,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: true);
     final user = Provider.of<UserModel?>(context);
 
     if (user == null) {
@@ -82,11 +105,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Olá, ${user.name ?? 'Utilizador'}'),
+        title: Text(
+          'Olá ${user.name ?? ''}',
+          style: const TextStyle(color: Colors.white),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScannerScreen())),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ScannerScreen()));
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -101,7 +131,9 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Erro ao carregar dados: ${snapshot.error}'));
+            return Center(
+              child: Text('Erro ao carregar dados: ${snapshot.error}'),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('Nenhum medicamento cadastrado.'));
@@ -116,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final medication = medications[index];
                 return MedicationCard(
                   medication: medication,
-                  onEdit: () => _navigateToEditScreen(medication), 
+                  onEdit: () => _navigateToEditMedication(medication),
                   onDelete: () => _deleteMedication(medication.id),
                 );
               },
@@ -134,25 +166,20 @@ class _HomeScreenState extends State<HomeScreen> {
             FloatingActionButton(
               heroTag: 'fab_chatbot',
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ChatScreen()),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const ChatScreen()));
               },
               tooltip: 'Abrir Chatbot',
               child: const Icon(Icons.support_agent),
             ),
-            
+
             const SizedBox(width: 10),
 
             // Botão para Adicionar Medicamento
             FloatingActionButton(
               heroTag: 'fab_add_medication',
-              onPressed: () async {
-                final result = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddEditMedicationScreen()));
-                if (result == true) {
-                  _refreshMedications();
-                }
-              },
+              onPressed: _navigateToAddMedication,
               tooltip: 'Adicionar Medicamento',
               child: const Icon(Icons.add),
             ),

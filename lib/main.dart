@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'models/user_model.dart';
 import 'services/auth_service.dart';
 import 'services/medication_service.dart';
+import 'services/alarm_service.dart'; // ✅ Import do AlarmService
 import 'utils/app_colors.dart';
 import 'widgets/auth_wrapper.dart';
 
@@ -20,6 +21,9 @@ class VitaLogApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         Provider<MedicationService>(create: (_) => MedicationService()),
+        Provider<AlarmService>(
+          create: (_) => AlarmService(),
+        ), // ✅ Agora disponível globalmente
         StreamProvider<UserModel?>(
           create: (context) => context.read<AuthService>().user,
           initialData: null,
