@@ -23,7 +23,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      setState(() { _loading = true; _error = ''; });
+      setState(() {
+        _loading = true;
+        _error = '';
+      });
       final authService = Provider.of<AuthService>(context, listen: false);
       final result = await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
@@ -51,7 +54,8 @@ class _LoginScreenState extends State<LoginScreen> {
           constraints: const BoxConstraints(maxWidth: 400),
           child: Card(
             elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             margin: const EdgeInsets.all(24.0),
             child: Padding(
               padding: const EdgeInsets.all(32.0),
@@ -62,17 +66,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     // LINHA ALTERADA AQUI
-                    Image.asset('assets/images/logo_vitalog.png', height: 80), 
+                    Image.asset('assets/images/nova_logo22.png', height: 80),
                     const SizedBox(height: 16),
-                    const Text('Bem-vindo ao VitaLog', textAlign: TextAlign.center, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                    const Text('Bem-vindo ao VitaLog',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark)),
                     const SizedBox(height: 8),
-                    const Text('O seu assistente de saúde digital.', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: AppColors.textLight)),
+                    const Text('O seu assistente de saúde digital.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 16, color: AppColors.textLight)),
                     const SizedBox(height: 32.0),
                     TextFormField(
                       controller: _emailController,
-                      decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
+                      decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email_outlined)),
                       keyboardType: TextInputType.emailAddress,
-                      validator: (val) => val!.isEmpty ? 'Por favor, insira o seu email' : null,
+                      validator: (val) =>
+                          val!.isEmpty ? 'Por favor, insira o seu email' : null,
                     ),
                     const SizedBox(height: 16.0),
                     TextFormField(
@@ -82,19 +97,28 @@ class _LoginScreenState extends State<LoginScreen> {
                         labelText: 'Senha',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_isPasswordObscured ? Icons.visibility_off : Icons.visibility, color: AppColors.textLight),
-                          onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
+                          icon: Icon(
+                              _isPasswordObscured
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: AppColors.textLight),
+                          onPressed: () => setState(
+                              () => _isPasswordObscured = !_isPasswordObscured),
                         ),
                       ),
-                      validator: (val) => val!.length < 6 ? 'A senha deve ter no mínimo 6 caracteres' : null,
+                      validator: (val) => val!.length < 6
+                          ? 'A senha deve ter no mínimo 6 caracteres'
+                          : null,
                     ),
-                     Align(
+                    Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         child: const Text('Esqueceu a senha?'),
                         onPressed: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const ForgotPasswordScreen()),
                           );
                         },
                       ),
@@ -102,7 +126,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (_error.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10.0),
-                        child: Text(_error, style: const TextStyle(color: Colors.red, fontSize: 14)),
+                        child: Text(_error,
+                            style: const TextStyle(
+                                color: Colors.red, fontSize: 14)),
                       ),
                     const SizedBox(height: 16.0),
                     _loading
@@ -116,7 +142,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text('Não tem uma conta? Registe-se'),
                       onPressed: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => const RegisterScreen()),
                         );
                       },
                     ),
