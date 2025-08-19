@@ -8,9 +8,6 @@ import '../models/medication_model.dart';
 import '../widgets/medication_details_dialog.dart';
 
 class ScannerScreen extends StatefulWidget {
-  /// Define o modo de operação do scanner.
-  /// Se true, ele retorna o código de barras lido como uma string.
-  /// Se false (padrão), ele busca os dados do medicamento pelo QR Code.
   final bool isBarcodeMode;
 
   const ScannerScreen({super.key, this.isBarcodeMode = false});
@@ -21,7 +18,6 @@ class ScannerScreen extends StatefulWidget {
 
 class _ScannerScreenState extends State<ScannerScreen> {
   final MobileScannerController _scannerController = MobileScannerController(
-    // Otimiza o scanner para os tipos de código que usamos.
     formats: [
       BarcodeFormat.qrCode,
       BarcodeFormat.ean13,
@@ -39,7 +35,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
     super.dispose();
   }
 
-  /// Lógica unificada para lidar com códigos lidos.
   void _onDetect(BarcodeCapture capture) {
     if (_isProcessing || !mounted) return;
 
@@ -50,17 +45,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
       _isProcessing = true;
     });
 
-    // Decide o que fazer com base no modo do scanner.
     if (widget.isBarcodeMode) {
-      // Modo Código de Barras: apenas retorna o código para a tela anterior.
       Navigator.of(context).pop(code);
     } else {
-      // Modo QR Code: busca os dados do medicamento.
       _fetchMedicationDetails(code);
     }
   }
 
-  /// Busca os detalhes do medicamento na API e exibe o pop-up.
   Future<void> _fetchMedicationDetails(String qrIdentifier) async {
     final medicationService = Provider.of<MedicationService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -75,7 +66,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
       final Medication medication = await medicationService.getMedicationByQRCode(qrIdentifier, token);
       
       if (mounted) {
-        // Mostra o PopUp com os detalhes do medicamento.
         await showDialog(
           context: context,
           builder: (context) => MedicationDetailsDialog(medication: medication),
@@ -84,7 +74,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
     } catch (e) {
       _showErrorAndResume('Medicamento não encontrado ou erro na busca.');
     } finally {
-      // Permite escanear novamente após fechar o dialog.
       if (mounted) {
         setState(() {
           _isProcessing = false;
@@ -93,7 +82,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
   }
 
-  /// Exibe uma mensagem de erro e reativa o scanner.
   void _showErrorAndResume(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,6 +98,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scanWindowSize = MediaQuery.of(context).size.width * 0.7;
+    
+    final scanWindow = Rect.fromCenter(
+      center: MediaQuery.of(context).size.center(Offset.zero),
+      width: scanWindowSize,
+      height: scanWindowSize,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isBarcodeMode ? 'Escanear Código de Barras' : 'Escanear QR Code'),
@@ -120,11 +116,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
           MobileScanner(
             controller: _scannerController,
             onDetect: _onDetect,
+            scanWindow: scanWindow,
           ),
-          // Adiciona uma sobreposição visual para guiar o usuário.
           Container(
-            width: MediaQuery.of(context).size.width * 0.7,
-            height: MediaQuery.of(context).size.width * 0.7,
+            width: scanWindowSize,
+            height: scanWindowSize,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
               borderRadius: BorderRadius.circular(12),

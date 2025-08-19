@@ -63,7 +63,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
               TimeOfDay(hour: int.parse(first[0]), minute: int.parse(first[1]));
         }
       } catch (e) {
-        print("Erro ao parsear horário inicial: $e");
+        print("Erro ao analisar horário inicial: $e");
         _startTime = null;
       }
     }
@@ -77,7 +77,6 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     super.dispose();
   }
 
-  /// Abre a tela de scanner, busca o nome do produto pelo código de barras e preenche o campo.
   Future<void> _scanBarcode() async {
     final scannedCode = await Navigator.of(context).push<String>(
       MaterialPageRoute(
@@ -224,7 +223,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar medicamento: ${e.toString()}')),
+          SnackBar(content: Text('Erro ao guardar medicamento: ${e.toString()}')),
         );
       }
     } finally {
@@ -309,7 +308,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton.icon(
                       icon: const Icon(Icons.save),
-                      label: Text(_isEditing ? 'Salvar Alterações' : 'Adicionar Medicamento'),
+                      label: Text(_isEditing ? 'Guardar Alterações' : 'Adicionar Medicamento'),
                       onPressed: _submitForm,
                     ),
             ],

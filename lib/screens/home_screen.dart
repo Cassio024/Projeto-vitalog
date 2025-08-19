@@ -1,7 +1,7 @@
-// Arquivo: lib/screens/home_screen.dart (CORRIGIDO)
+// Arquivo: lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart'; // ✅ IMPORT ADICIONADO
+import 'package:uuid/uuid.dart';
 import '../models/medication_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
@@ -63,14 +63,14 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Medicamento deletado com sucesso!')),
+          const SnackBar(content: Text('Medicamento apagado com sucesso!')),
         );
         _refreshMedications();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao deletar medicamento: $e')),
+          SnackBar(content: Text('Falha ao apagar medicamento: $e')),
         );
       }
     }
@@ -113,7 +113,6 @@ class _HomeScreenState extends State<HomeScreen> {
     bool needsRefresh = false;
 
     if (medication.qrCodeIdentifier == null) {
-      // ✅ CORREÇÃO: Acessar o gerador de UUID corretamente.
       final newIdentifier = const Uuid().v4();
       needsRefresh = true;
       try {
