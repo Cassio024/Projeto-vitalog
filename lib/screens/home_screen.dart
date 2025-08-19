@@ -10,7 +10,7 @@ import '../services/alarm_service.dart';
 import '../widgets/medication_card.dart';
 import '../widgets/qr_code_dialog.dart';
 import 'add_edit_medication_screen.dart';
-import 'scanner_screen.dart';
+import 'qr_code_scanner_screen.dart';
 import 'chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -166,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.of(
                 context,
-              ).push(MaterialPageRoute(builder: (_) => const ScannerScreen()));
+              ).push(MaterialPageRoute(builder: (_) => const QrCodeScannerScreen()));
             },
           ),
           IconButton(
@@ -237,3 +237,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+

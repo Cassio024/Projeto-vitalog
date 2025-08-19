@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-
 import '../models/medication_model.dart';
 import '../services/medication_service.dart';
 import '../services/auth_service.dart';
 import '../services/alarm_service.dart';
-import 'scanner_screen.dart';
+import 'qr_code_scanner_screen.dart';
 
 class AddEditMedicationScreen extends StatefulWidget {
   final Medication? medication;
@@ -80,7 +79,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
   Future<void> _scanBarcode() async {
     final scannedCode = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (context) => const ScannerScreen(isBarcodeMode: true),
+        builder: (context) => const QrCodeScannerScreen(isBarcodeMode: true),
       ),
     );
 
