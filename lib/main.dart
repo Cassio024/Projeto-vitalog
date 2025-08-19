@@ -4,11 +4,14 @@ import 'package:provider/provider.dart';
 import 'models/user_model.dart';
 import 'services/auth_service.dart';
 import 'services/medication_service.dart';
-import 'services/alarm_service.dart'; // ✅ Import do AlarmService
+import 'services/alarm_service.dart';
 import 'utils/app_colors.dart';
 import 'widgets/auth_wrapper.dart';
 
 void main() {
+  // Garante que os bindings do Flutter sejam inicializados antes de rodar o app.
+  // Essencial para plugins como o Firebase.
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const VitaLogApp());
 }
 
@@ -17,13 +20,16 @@ class VitaLogApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // MultiProvider torna os serviços disponíveis para toda a árvore de widgets.
     return MultiProvider(
       providers: [
+        // Para gerenciar o estado de autenticação e notificar os ouvintes.
         ChangeNotifierProvider(create: (_) => AuthService()),
+        // Fornece uma instância única do serviço de medicamentos.
         Provider<MedicationService>(create: (_) => MedicationService()),
-        Provider<AlarmService>(
-          create: (_) => AlarmService(),
-        ), // ✅ Agora disponível globalmente
+        // Fornece uma instância única do serviço de alarme.
+        Provider<AlarmService>(create: (_) => AlarmService()),
+        // Expõe o stream de usuário para que o app reaja a logins/logouts.
         StreamProvider<UserModel?>(
           create: (context) => context.read<AuthService>().user,
           initialData: null,
@@ -31,6 +37,7 @@ class VitaLogApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'VitaLog',
+        // Define o tema visual global do aplicativo.
         theme: ThemeData(
           primaryColor: AppColors.primary,
           scaffoldBackgroundColor: AppColors.background,
@@ -78,6 +85,7 @@ class VitaLogApp extends StatelessWidget {
             fillColor: Colors.white,
           ),
         ),
+        // O AuthWrapper decide qual tela mostrar (Login ou Home).
         home: const AuthWrapper(),
         debugShowCheckedModeBanner: false,
       ),
