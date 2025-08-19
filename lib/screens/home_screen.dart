@@ -1,11 +1,14 @@
+// Arquivo: lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../models/medication_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/medication_service.dart';
-import '../services/alarm_service.dart'; // ✅ Import do AlarmService
+import '../services/alarm_service.dart';
 import '../widgets/medication_card.dart';
+import '../widgets/qr_code_dialog.dart';
 import 'add_edit_medication_screen.dart';
 import 'scanner_screen.dart';
 import 'chatbot_screen.dart';
@@ -49,7 +52,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     final alarmService = Provider.of<AlarmService>(context, listen: false);
 
-    // ✅ Cancela apenas os alarmes deste medicamento
     alarmService.cancelAlarmsForMedication(medicationId);
 
     if (authService.token == null) return;
@@ -61,14 +63,14 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Medicamento deletado com sucesso!')),
+          const SnackBar(content: Text('Medicamento apagado com sucesso!')),
         );
         _refreshMedications();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao deletar medicamento: $e')),
+          SnackBar(content: Text('Falha ao apagar medicamento: $e')),
         );
       }
     }
@@ -94,6 +96,58 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _handleQrCodeAction(Medication medication) async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final medicationService =
+        Provider.of<MedicationService>(context, listen: false);
+    final token = authService.token;
+
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro de autenticação. Tente novamente.')),
+      );
+      return;
+    }
+
+    Medication medicationToShow = medication;
+    bool needsRefresh = false;
+
+    if (medication.qrCodeIdentifier == null) {
+      final newIdentifier = const Uuid().v4();
+      needsRefresh = true;
+      try {
+        await medicationService.updateMedication(
+          medication.id,
+          {'qrCodeIdentifier': newIdentifier},
+          token,
+        );
+        medicationToShow = Medication(
+            id: medication.id,
+            name: medication.name,
+            dosage: medication.dosage,
+            schedules: medication.schedules,
+            expirationDate: medication.expirationDate,
+            qrCodeIdentifier: newIdentifier);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao gerar QR Code: ${e.toString()}')),
+          );
+        }
+        return;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => QrCodeDialog(medication: medicationToShow),
+    );
+
+    if (needsRefresh) {
+      _refreshMedications();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: true);
@@ -105,10 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Olá ${user.name ?? ''}',
-          style: const TextStyle(color: Colors.white),
-        ),
+        title: Text('Olá ${user.name ?? ''}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
@@ -136,7 +187,8 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Nenhum medicamento cadastrado.'));
+            return const Center(
+                child: Text('Nenhum medicamento cadastrado.'));
           }
           final medications = snapshot.data!;
           return RefreshIndicator(
@@ -150,19 +202,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   medication: medication,
                   onEdit: () => _navigateToEditMedication(medication),
                   onDelete: () => _deleteMedication(medication.id),
+                  onViewOrGenerateQrCode: () => _handleQrCodeAction(medication),
                 );
               },
             ),
           );
         },
       ),
-      // ----- BLOCO ATUALIZADO -----
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(left: 32.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Botão para o Chatbot
             FloatingActionButton(
               heroTag: 'fab_chatbot',
               onPressed: () {
@@ -173,10 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
               tooltip: 'Abrir Chatbot',
               child: const Icon(Icons.support_agent),
             ),
-
             const SizedBox(width: 10),
-
-            // Botão para Adicionar Medicamento
             FloatingActionButton(
               heroTag: 'fab_add_medication',
               onPressed: _navigateToAddMedication,
