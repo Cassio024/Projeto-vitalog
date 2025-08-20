@@ -1,4 +1,3 @@
-// Arquivo: lib/services/auth_service.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -14,6 +13,12 @@ class AuthService with ChangeNotifier {
   String? _token;
 
   String? get token => _token;
+
+  // ✅ Novo método para checar login
+  bool isLoggedIn() {
+    if (_token == null || _token!.isEmpty) return false;
+    return !JwtDecoder.isExpired(_token!);
+  }
 
   Future<Map<String, dynamic>> registerWithEmailAndPassword(
     String name,

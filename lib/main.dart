@@ -1,36 +1,49 @@
-// Arquivo: lib/main.dart
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'models/user_model.dart';
 import 'services/auth_service.dart';
 import 'services/medication_service.dart';
-import 'services/alarm_service.dart'; // ✅ Import do AlarmService
+import 'services/alarm_service.dart';
 import 'utils/app_colors.dart';
 import 'widgets/auth_wrapper.dart';
+import 'screens/alarm_screen.dart'; // ⬅ importa seu AlarmScreen
 
-void main() {
-  runApp(const VitaLogApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final authService = AuthService();
+
+  // 🔹 Solicitar permissão de notificações no navegador
+  if (html.Notification.supported) {
+    final permission = await html.Notification.requestPermission();
+    print('Permissão de notificação: $permission');
+  } else {
+    print('Notificações não suportadas neste navegador.');
+  }
+
+  runApp(VitaLogApp(authService: authService));
 }
 
 class VitaLogApp extends StatelessWidget {
-  const VitaLogApp({super.key});
+  final AuthService authService;
+  const VitaLogApp({super.key, required this.authService});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider<AuthService>.value(value: authService),
         Provider<MedicationService>(create: (_) => MedicationService()),
-        Provider<AlarmService>(
-          create: (_) => AlarmService(),
-        ), // ✅ Agora disponível globalmente
+        Provider<AlarmService>(create: (_) => AlarmService()),
         StreamProvider<UserModel?>(
-          create: (context) => context.read<AuthService>().user,
+          create: (_) => authService.user,
           initialData: null,
         ),
       ],
       child: MaterialApp(
         title: 'VitaLog',
+        navigatorKey: navigatorKey,
         theme: ThemeData(
           primaryColor: AppColors.primary,
           scaffoldBackgroundColor: AppColors.background,
@@ -78,7 +91,11 @@ class VitaLogApp extends StatelessWidget {
             fillColor: Colors.white,
           ),
         ),
-        home: const AuthWrapper(),
+        // 🔹 Agora temos rotas nomeadas
+        routes: {
+          '/': (context) => const AuthWrapper(),
+          '/alarm': (context) => const AlarmScreen(), // rota do alarme
+        },
         debugShowCheckedModeBanner: false,
       ),
     );
