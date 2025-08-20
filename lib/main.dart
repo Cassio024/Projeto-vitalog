@@ -1,4 +1,4 @@
-// Arquivo: lib/main.dart
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'models/user_model.dart';
@@ -7,36 +7,54 @@ import 'services/medication_service.dart';
 import 'services/alarm_service.dart';
 import 'utils/app_colors.dart';
 import 'widgets/auth_wrapper.dart';
+import 'screens/alarm_screen.dart'; // Importa a tela de alarme
 
-void main() {
-  // Garante que os bindings do Flutter sejam inicializados antes de rodar o app.
-  // Essencial para plugins como o Firebase.
+// A GlobalKey para o Navigator pode ser útil para navegação sem o context.
+// Se não estiver usando, pode ser removida.
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> main() async {
+  // Garante que os bindings do Flutter sejam inicializados.
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const VitaLogApp());
+
+  // Instancia o serviço de autenticação uma única vez.
+  final authService = AuthService();
+
+  // Solicita permissão de notificações no navegador (para web).
+  if (html.Notification.supported) {
+    final permission = await html.Notification.requestPermission();
+    print('Permissão de notificação: $permission');
+  } else {
+    print('Notificações não são suportadas neste navegador.');
+  }
+
+  runApp(VitaLogApp(authService: authService));
 }
 
 class VitaLogApp extends StatelessWidget {
-  const VitaLogApp({super.key});
+  final AuthService authService;
+  const VitaLogApp({super.key, required this.authService});
 
   @override
   Widget build(BuildContext context) {
     // MultiProvider torna os serviços disponíveis para toda a árvore de widgets.
     return MultiProvider(
       providers: [
-        // Para gerenciar o estado de autenticação e notificar os ouvintes.
-        ChangeNotifierProvider(create: (_) => AuthService()),
-        // Fornece uma instância única do serviço de medicamentos.
+        // Fornece a instância já criada do AuthService.
+        ChangeNotifierProvider<AuthService>.value(value: authService),
+        // Cria e fornece uma instância única do serviço de medicamentos.
         Provider<MedicationService>(create: (_) => MedicationService()),
-        // Fornece uma instância única do serviço de alarme.
+        // Cria e fornece uma instância única do serviço de alarme.
         Provider<AlarmService>(create: (_) => AlarmService()),
-        // Expõe o stream de usuário para que o app reaja a logins/logouts.
+        // Expõe o stream de usuário para que o app reaja a mudanças de autenticação.
         StreamProvider<UserModel?>(
-          create: (context) => context.read<AuthService>().user,
+          create: (_) => authService.user,
           initialData: null,
         ),
       ],
       child: MaterialApp(
         title: 'VitaLog',
+        navigatorKey: navigatorKey, // Chave para navegação global.
         // Define o tema visual global do aplicativo.
         theme: ThemeData(
           primaryColor: AppColors.primary,
@@ -85,8 +103,12 @@ class VitaLogApp extends StatelessWidget {
             fillColor: Colors.white,
           ),
         ),
-        // O AuthWrapper decide qual tela mostrar (Login ou Home).
-        home: const AuthWrapper(),
+        // Define as rotas nomeadas da aplicação.
+        routes: {
+          // A rota inicial '/' aponta para o AuthWrapper, que decide qual tela mostrar.
+          '/': (context) => const AuthWrapper(),
+          '/alarm': (context) => const AlarmScreen(), // Rota para a tela de alarme.
+        },
         debugShowCheckedModeBanner: false,
       ),
     );
