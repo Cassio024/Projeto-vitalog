@@ -44,6 +44,44 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // FUNÇÃO CORRIGIDA: Para confirmar que uma dose foi tomada
+  Future<void> _confirmDose(Medication medication, String doseKey) async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final medicationService = Provider.of<MedicationService>(context, listen: false);
+    final token = authService.token;
+
+    if (token == null) return;
+
+    // Cria uma cópia do mapa de doses e atualiza-o
+    final updatedDoses = Map<String, bool>.from(medication.dosesTaken);
+    updatedDoses[doseKey] = true;
+
+    try {
+      // Chama o serviço para atualizar o medicamento no backend,
+      // enviando APENAS o campo 'dosesTaken'.
+      await medicationService.updateMedication(
+        medication.id,
+        {'dosesTaken': updatedDoses},
+        token,
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Dose confirmada com sucesso!'),
+              backgroundColor: Colors.green),
+        );
+      }
+      _refreshMedications();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao confirmar dose: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _deleteMedication(String medicationId) async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final medicationService = Provider.of<MedicationService>(
@@ -121,13 +159,16 @@ class _HomeScreenState extends State<HomeScreen> {
           {'qrCodeIdentifier': newIdentifier},
           token,
         );
+        
         medicationToShow = Medication(
             id: medication.id,
             name: medication.name,
             dosage: medication.dosage,
             schedules: medication.schedules,
             expirationDate: medication.expirationDate,
-            qrCodeIdentifier: newIdentifier);
+            qrCodeIdentifier: newIdentifier,
+            dosesTaken: medication.dosesTaken,
+            );
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -138,10 +179,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    showDialog(
-      context: context,
-      builder: (context) => QrCodeDialog(medication: medicationToShow),
-    );
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => QrCodeDialog(medication: medicationToShow),
+      );
+    }
 
     if (needsRefresh) {
       _refreshMedications();
@@ -198,11 +241,13 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: medications.length,
               itemBuilder: (context, index) {
                 final medication = medications[index];
+                // CHAMADA CORRIGIDA: Passando a função onConfirmDose para o card
                 return MedicationCard(
                   medication: medication,
                   onEdit: () => _navigateToEditMedication(medication),
                   onDelete: () => _deleteMedication(medication.id),
                   onViewOrGenerateQrCode: () => _handleQrCodeAction(medication),
+                  onConfirmDose: (doseKey) => _confirmDose(medication, doseKey),
                 );
               },
             ),
@@ -237,4 +282,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

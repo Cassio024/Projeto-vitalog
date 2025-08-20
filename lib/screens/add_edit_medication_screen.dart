@@ -7,7 +7,7 @@ import '../models/medication_model.dart';
 import '../services/medication_service.dart';
 import '../services/auth_service.dart';
 import '../services/alarm_service.dart';
-import 'qr_code_scanner_screen.dart';
+// A importação do scanner foi removida pois não é mais necessária.
 
 class AddEditMedicationScreen extends StatefulWidget {
   final Medication? medication;
@@ -76,45 +76,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     super.dispose();
   }
 
-  Future<void> _scanBarcode() async {
-    final scannedCode = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (context) => const QrCodeScannerScreen(isBarcodeMode: true),
-      ),
-    );
-
-    if (scannedCode != null && mounted) {
-      setState(() => _isLoading = true);
-      final medicationService =
-          Provider.of<MedicationService>(context, listen: false);
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final token = authService.token;
-
-      if (token != null) {
-        final productName =
-            await medicationService.getMedicationNameFromBarcode(scannedCode, token);
-        if (productName != null) {
-          setState(() {
-            _nameController.text = productName;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Nome do medicamento preenchido!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Produto não encontrado para este código de barras.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      }
-      setState(() => _isLoading = false);
-    }
-  }
+  // A função _scanBarcode() foi completamente removida.
 
   Future<void> _pickExpirationDate() async {
     final pickedDate = await showDatePicker(
@@ -247,13 +209,9 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Nome do Medicamento',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.barcode_reader),
-                    tooltip: 'Escanear Código de Barras',
-                    onPressed: _scanBarcode,
-                  ),
+                  // O ícone do leitor de código de barras foi removido daqui.
                 ),
                 validator: (value) => value!.isEmpty ? 'Insira um nome' : null,
               ),

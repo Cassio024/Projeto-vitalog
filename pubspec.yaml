@@ -27,7 +27,7 @@ dependencies:
   firebase_messaging: ^14.9.3
 
   # Scanner
-  mobile_scanner: ^5.1.1
+  mobile_scanner: ^7.0.1 
 
   # --- PACOTES ADICIONADOS PARA CORRIGIR OS ERROS ---
   uuid: ^4.4.0                 # Para gerar IDs únicos para os QR Codes
